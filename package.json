@@ -1,0 +1,46 @@
+{
+    "name": "express-tools",
+    "version": "0.0.0",
+    "description": "Enhances express APIs",
+    "private": true,
+    "workspaces": [
+      "packages/*"
+    ],
+    "engines": {
+      "node": ">=14"
+    },
+    "scripts": {
+      "lint": "eslint --ext .ts .",
+      "lint:fix": "eslint --ext .ts . --fix",
+      "test": "npm run test --workspaces --if-present",
+      "build": "npm run build --workspaces --if-present"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/nerve-box/express-tools.git"
+    },
+    "husky": {
+      "hooks": {
+        "pre-push": "npm run lint"
+      }
+    },
+    "typings": "index.d.ts",
+    "author": "Frederic Charette <fredericcharette@gmail.com>",
+    "license": "Apache-2.0",
+    "bugs": {
+      "url": "https://github.com/nerve-box/express-tools/issues"
+    },
+    "homepage": "https://github.com/nerve-box/express-tools#readme",
+    "devDependencies": {
+      "@types/express": "^5.0.0",
+      "@types/jest": "^29.5.0",
+      "@types/node": "^22.14.0",
+      "@typescript-eslint/eslint-plugin": "^8.30.0",
+      "@typescript-eslint/parser": "^8.30.0",
+      "eslint": "^9.24.0",
+      "eslint-plugin-jest": "^28.11.0",
+      "husky": "^9.1.0",
+      "typescript": "^5.8.0"
+    }
+  }
+  

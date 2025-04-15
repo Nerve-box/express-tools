@@ -1,0 +1,56 @@
+{
+    "name": "@express-tools/oas",
+    "version": "0.0.1",
+    "description": "OpenAPI plugin for express",
+    "license": "Apache-2.0",
+    "keywords": [
+        "express",
+        "open",
+        "api",
+        "openapi",
+        "standard",
+        "plugin",
+        "validation",
+        "documentation",
+        "definition",
+        "schema"
+    ],
+    "dependencies": {
+        
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "ts-jest": "^29.3.0",
+        "typescript": "^5.8.0"
+    },
+    "typings": "types.d.ts",
+    "scripts": {
+        "build": "rm -rf ./bin && tsc && cp ./package.json ./bin/package.json && cp ./README.md ./bin/README.md && cp ./types.d.ts ./bin/types.d.ts",
+        "test": "jest ./test/*"
+    },
+    "homepage": "https://github.com/nerve-box/express-tools",
+  "contributors": [
+    "frederic charette <fredericcharette@gmail.com>"
+  ],
+  "bugs": {
+    "url": "https://github.com/nerve-box/express-tools/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com/nerve-box/express-tools.git",
+    "directory": "packages/oas"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "globals": {
+      "ts-jest": {
+        "diagnostics": false,
+        "isolatedModules": true
+      }
+    },
+    "setupFilesAfterEnv": [
+        "<rootDir>/test/utils/error-matchers.ts"
+    ]
+  }
+}
