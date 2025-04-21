@@ -4,7 +4,7 @@ export const identifier = {
   description: 'Resource identifier',
   type: 'string',
   required: true,
-};
+}
 
 export const optionalAuthorization = {
   name: 'authorization',
@@ -12,7 +12,7 @@ export const optionalAuthorization = {
   description: 'The authentication token',
   type: 'string',
   pattern: '^Bearer [A-Za-z0-9+./_=-]*$',
-};
+}
 
 export const requiredAuthorization = {
   name: 'authorization',
@@ -21,7 +21,7 @@ export const requiredAuthorization = {
   type: 'string',
   required: true,
   pattern: '^Bearer [A-Za-z0-9+./_=-]*$',
-};
+}
 
 export const country = {
   name: 'country',
@@ -29,7 +29,7 @@ export const country = {
   description: 'The country of origin for the request',
   type: 'string',
   pattern: '^[A-Z]{2}$',
-};
+}
 
 export const language = {
   name: 'language',
@@ -40,7 +40,7 @@ export const language = {
     'en',
     'fr',
   ],
-};
+}
 
 type IncludeParams = {
   maxDepth?: number
@@ -49,19 +49,19 @@ type IncludeParams = {
 }
 
 export function include(model: _Model, { maxDepth, whitelist, blacklist }: IncludeParams = {}) {
-  const relationships = Object.keys(model.relationships);
+  const relationships = Object.keys(model.relationships)
 
   return {
-    name: 'include',
-    in: 'query',
-    description: `Relationships to include in the response [${Object.keys(model.relationships).toString()}]`,
-    type: 'array',
+    'name': 'include',
+    'in': 'query',
+    'description': `Relationships to include in the response [${Object.keys(model.relationships).toString()}]`,
+    'type': 'array',
     'x-direct-relations': relationships,
     'x-include-rules': { 'max-depth': maxDepth, whitelist, blacklist },
-    items: {
+    'items': {
       type: 'string',
     },
-  };
+  }
 }
 
 export function fields(type: string, model?: _Model | { attributes: string[] }) {
@@ -71,11 +71,11 @@ export function fields(type: string, model?: _Model | { attributes: string[] }) 
     description: `${type} fields to show`,
     type: 'array',
     items: { type: 'string', enum: [''] },
-  };
-  if (model) {
-    base.items.enum = base.items.enum.concat(Array.isArray(model.attributes) ? model.attributes : Object.keys(model.attributes));
   }
-  return base;
+  if (model) {
+    base.items.enum = base.items.enum.concat(Array.isArray(model.attributes) ? model.attributes : Object.keys(model.attributes))
+  }
+  return base
 }
 
 export function pageNumber(defaultPage: number) {
@@ -87,7 +87,7 @@ export function pageNumber(defaultPage: number) {
     format: 'int32',
     minimum: 1,
     default: defaultPage ?? 1,
-  };
+  }
 }
 
 export function nestedPageNumber(type: string) {
@@ -99,7 +99,7 @@ export function nestedPageNumber(type: string) {
     format: 'int32',
     minimum: 1,
     default: 1,
-  };
+  }
 }
 
 export function pageSize(defaultSize: number) {
@@ -112,7 +112,7 @@ export function pageSize(defaultSize: number) {
     minimum: 0,
     maximum: 1000,
     default: defaultSize ?? 100,
-  };
+  }
 }
 
 export function nestedPageSize(type: string, options: { defaultSize?: number }) {
@@ -125,7 +125,7 @@ export function nestedPageSize(type: string, options: { defaultSize?: number }) 
     minimum: 0,
     maximum: 20,
     default: options?.defaultSize ?? 20,
-  };
+  }
 }
 
 export function pageOffset(defaultValue: number) {
@@ -136,7 +136,7 @@ export function pageOffset(defaultValue: number) {
     type: 'integer',
     format: 'int32',
     default: defaultValue || 0,
-  };
+  }
 }
 
 export const errorObject = {
@@ -175,4 +175,4 @@ export const errorObject = {
       additionalProperties: true,
     },
   },
-};
+}

@@ -1,12 +1,12 @@
-import { errorObject } from './utils/parameters';
+import { errorObject } from './utils/parameters'
 
 const wrapModelResponse = (type: string) => {
-  return { type: 'object', properties: { data: { $ref: `#/definitions/${type}` } } };
-};
+  return { type: 'object', properties: { data: { $ref: `#/definitions/${type}` } } }
+}
 
 const wrapMetaResponse = () => {
-  return { type: 'object', properties: { meta: { type: 'object' } } };
-};
+  return { type: 'object', properties: { meta: { type: 'object' } } }
+}
 
 const defaultResponse = {
   description: 'Errors',
@@ -18,7 +18,7 @@ const defaultResponse = {
       items: errorObject,
     },
   },
-};
+}
 
 function dataModelAsDefinition(model: _Model) {
   return {
@@ -32,23 +32,23 @@ function dataModelAsDefinition(model: _Model) {
       },
       relationships: { type: 'object', description: Object.keys(model.relationships).join(',') },
     },
-  };
+  }
 }
 
 function domainAsDefinition(domain: JsonApiRoute): JsonApiRoute {
   return {
-    path: domain.path,
-    method: domain.method,
-    parameters: domain.parameters,
-    description: domain.description,
-    operationId: domain.operationId,
-    tags: domain.tags,
+    'path': domain.path,
+    'method': domain.method,
+    'parameters': domain.parameters,
+    'description': domain.description,
+    'operationId': domain.operationId,
+    'tags': domain.tags,
     'x-client-cache': domain.clientCache,
-    responses: {
+    'responses': {
       200: { schema: domain.model ? wrapModelResponse(domain.model.type) : wrapMetaResponse() },
       default: defaultResponse,
     },
-  };
+  }
 }
 
 export const swaggerBase = {
@@ -66,25 +66,25 @@ export const swaggerBase = {
   ],
   consumes: ['application/json', 'application/x-www-form-urlencoded'],
   produces: ['application/json'],
-};
+}
 
 export function expressTokensToSwagger(path) {
-  return path.replace(/(:[a-zA-Z0-9\-\_]+)/g, (key) => `{${key.substring(1)}}`);
+  return path.replace(/(:[a-zA-Z0-9\-_]+)/g, key => `{${key.substring(1)}}`)
 }
 
 export function render(spec: any) {
-  const routes = Object.keys(spec);
+  const routes = Object.keys(spec)
   return {
     ...swaggerBase,
     paths: routes.reduce((acc, route) => {
-      const pathName = expressTokensToSwagger(spec[route].path);
-      if (!acc[pathName]) acc[pathName] = {};
-      acc[pathName][spec[route].method] = domainAsDefinition(spec[route]);
-      return acc;
+      const pathName = expressTokensToSwagger(spec[route].path)
+      if (!acc[pathName]) acc[pathName] = {}
+      acc[pathName][spec[route].method] = domainAsDefinition(spec[route])
+      return acc
     }, {}),
     definitions: routes.reduce((acc, route) => {
-      if (spec[route].model) acc[spec[route].model.type] = dataModelAsDefinition(spec[route].model);
-      return acc;
+      if (spec[route].model) acc[spec[route].model.type] = dataModelAsDefinition(spec[route].model)
+      return acc
     }, {}),
-  };
+  }
 }

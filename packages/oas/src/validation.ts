@@ -1,6 +1,6 @@
-import check from 'swagger-route-validator';
+import check from 'swagger-route-validator'
 
-function guardAgainstForbiddenIncludePattern(includeVal: string[], includeParam?: Serializable, context?: _Context) {
+/* function guardAgainstForbiddenIncludePattern(includeVal: string[], includeParam?: Serializable, context?: _Context) {
   if (!includeVal || includeVal.length === 0) return;
   if (!includeParam) return;
 
@@ -21,30 +21,29 @@ function guardAgainstForbiddenIncludePattern(includeVal: string[], includeParam?
 
     if (rejectReason !== null) throw new Error(`Invalid include value ${includeVal[i]}: ${rejectReason}`);
   }
-}
+} */
 
 export default function validate() {
   function OASValidation(req, res, next) {
-
     // TODO: validate that req.route exists- it should be invoked as a middleware, not a root-level plugin
 
-    const operationId = `${req.method.toLowerCase()} ${req.route.path}`;
-    const matchingSpec = req._oas?.routes[operationId];
+    const operationId = `${req.method.toLowerCase()} ${req.route.path}`
+    const matchingSpec = req._oas?.routes[operationId]
 
     if (matchingSpec) {
-      const errors = check(matchingSpec, req);
+      const errors = check(matchingSpec, req)
       if (errors.length > 0) {
-        const errObj = new Error(JSON.stringify(errors));
-        errObj.statusCode = 400;
-        delete errObj.stack;
-        return next(errObj);
+        const errObj = new Error(JSON.stringify(errors))
+        errObj.statusCode = 400
+        delete errObj.stack
+        return next(errObj)
       }
     }
 
-    return next();
+    return next()
   }
 
-  OASValidation.OASType = 'validation';
+  OASValidation.OASType = 'validation'
 
-  return OASValidation;
+  return OASValidation
 }

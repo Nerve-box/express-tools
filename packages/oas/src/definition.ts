@@ -1,12 +1,12 @@
 export default function Definition(routeDefinition) {
-    function OASDefinition(req, res, next) {
-        if (!req) return routeDefinition;
-        
-        req.definition = routeDefinition;
-        return next();
-    }
+  function OASDefinition(req, res, next) {
+    if (!req) return routeDefinition
 
-    OASDefinition.OASType = 'definition';
+    req.definition = routeDefinition
+    return next()
+  }
 
-    return OASDefinition;
+  OASDefinition.OASType = 'definition'
+
+  return OASDefinition
 }
