@@ -1,9 +1,3 @@
-import { ApiError } from '../errors';
-import monitoring from './middleware/monitoring';
-import { render } from './renderer';
-import requestValidator from './middleware/request-validation';
-import { to } from '../async';
-
 function link(resolver, model, clientCache, specifications: RouterSpecifications) {
   return async (req) => {
     req.context.res.removeHeader('X-Powered-By');
@@ -14,25 +8,19 @@ function link(resolver, model, clientCache, specifications: RouterSpecifications
     try {
       data = await resolver(req.context);
     } catch (error) {
-      const formattedError = new ApiError(error, error.status || 500, error.stack, error.message, req.context);
+      const formattedError = new Error(error, error.status || 500, error.stack, error.message, req.context);
       req.context.res.writeHead(formattedError.status, specifications.responseHeaders);
       return req.context.res.end(specifications.formatError(formattedError));
     }
 
     if (clientCache) specifications.responseHeaders['cache-control'] = clientCache;
-    const [renderError, response] = await to(render({ context: req.context, data, model }));
-
-    if (renderError) {
-      req.context.res.writeHead(500, specifications.responseHeaders);
-      return req.context.res.end(specifications.formatError(renderError));
-    }
 
     if ([301, 302].includes(req.context.res.statusCode)) {
-      return req.context.res.end(response);
+      return req.context.res.end(data);
     }
 
     req.context.res.writeHead(200, specifications.responseHeaders);
-    req.context.res.end(specifications.formatResponse(response));
+    req.context.res.end(specifications.formatResponse(data));
   };
 }
 
@@ -73,8 +61,63 @@ export function register(route: _Route, router, specifications: RouterSpecificat
   router._spec[`${route.method} ${route.path}`] = route;
   router[route.method](
     route.path, ...route.middlewares || [],
-    requestValidator(router),
-    monitoring,
     link(route.resolver, route.model, route.clientCache, specifications)
   );
+}
+
+export default function router(expressApp, config) {
+
+  // Validate app
+
+  // Validate config ex: 
+  /*
+{
+  schemas: {
+    user: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' required: true },
+        name: { type: 'string' },
+        age: { type: 'number' },
+      },
+    },
+  },
+  */
+
+  // Store config in express app
+  expressApp.oas = Object.assign(config, { routes: {}});
+
+  // Append config to request to prevent gymnastics
+  function OASRouter(req, res, next) {
+    req._oas = expressApp.oas;
+    return next();
+  }
+  OASRouter.OASType = 'router';
+  expressApp.use(OASRouter);
+
+  // Override listen
+  const defaultListen = expressApp.listen;
+  function listen(port, callback) {
+
+    // Scan routes for definition middleware
+    for (let i = 0; i < expressApp.router.stack.length; i++) {
+      if (expressApp.router.stack[i].route) {
+        const definition = expressApp.router.stack[i].route.stack.find((middleware) => middleware.handle.OASType === 'definition');
+        if (definition) {
+          // Validate + Fill missing fields in definition
+
+          // Add definition to router object, as a fast-reference for validation and documentation
+          expressApp.oas.routes[`${definition.method} ${expressApp.router.stack[i].route.path}`] = definition.handle();
+
+          // Definition middleware sits in front and attaches the correct OAS definition in the request object
+
+        }
+      }
+    }
+
+    return defaultListen.call(expressApp, port, callback);
+  }
+  expressApp.listen = listen
+
+  return expressApp;
 }

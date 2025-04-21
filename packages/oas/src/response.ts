@@ -1,5 +1,3 @@
-import { to } from '../async';
-
 const asJsonApiObject = (data, model, context) => {
   const fieldList = context.params[`fields[${model.type}]`] ? context.params[`fields[${model.type}]`].split(',') : Object.keys(model.attributes);
   return fieldList.reduce((acc: any, key: string) => {
@@ -52,7 +50,7 @@ function fetchIncludedRelationships(response: any, { data, context, model, paren
   return Promise.all(includeTree.map(async (branch) => {
     const handle: RelationshipParams<Promise<any>> = model.relationships[branch];
     const targetModel = handle.model;
-    if (targetModel) {
+    /*if (targetModel) {
       const [errors, entities] = await to(handle.resolver(data, { context, params: context.params, relationship: branch, model: targetModel }));
 
       if (errors) {
@@ -63,7 +61,7 @@ function fetchIncludedRelationships(response: any, { data, context, model, paren
         (Array.isArray(entities) ? entities : [entities])
           .map((entity) => parseRelationshipEntity(response, { data: entity, context, model: targetModel, parent, branch }, cursor))
       );
-    }
+    }*/
     return null;
   }));
 }

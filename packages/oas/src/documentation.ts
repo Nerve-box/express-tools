@@ -1,4 +1,3 @@
-import config from 'config';
 import { errorObject } from './utils/parameters';
 
 const wrapModelResponse = (type: string) => {
@@ -59,7 +58,7 @@ export const swaggerBase = {
     version: '0.0.0',
     title: '<project_name> API',
   },
-  host: config.server.host,
+  host: '0.0.0.0',
   basePath: '/',
   schemes: [
     'http',
