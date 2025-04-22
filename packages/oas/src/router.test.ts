@@ -1,5 +1,5 @@
 // import router from './router';
 
 describe('Router', () => {
-  test('todo', () => {})
-})
+  test('todo', () => {});
+});

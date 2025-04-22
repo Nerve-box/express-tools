@@ -1,4 +1,4 @@
-type Serializable = string | number | boolean | { [key: string]: Serializable } | Array<Serializable>
+type Serializable = string | number | boolean | { [key: string]: Serializable } | Array<Serializable>;
 
 type Service = {
   basePath?: string
@@ -6,7 +6,7 @@ type Service = {
   host: string
   query?: { [key: string]: Serializable }
   [key: string]: Serializable
-}
+};
 
 type AttributeParams = {
   type: 'string' | 'number' | 'integer' | 'object' | 'array' | 'boolean'
@@ -16,9 +16,9 @@ type AttributeParams = {
   description?: string
   scalarType?: any
   graphqlEntity?: string
-}
+};
 
-  type SerializableParams = { [key: string]: Serializable }
+  type SerializableParams = { [key: string]: Serializable };
 
 interface JsonApiRoute extends _Route {
   method: HttpMethods
@@ -28,7 +28,7 @@ interface SqsRoute extends _Route {
   method: 'sqs'
 }
 
-  type HttpMethods = 'get' | 'post' | 'patch' | 'delete' | 'put'
+  type HttpMethods = 'get' | 'post' | 'patch' | 'delete' | 'put';
 
   type RequestOptions = {
     headers?: { [key: string]: string }
@@ -38,13 +38,13 @@ interface SqsRoute extends _Route {
     timeout?: number
     body?: Serializable
     responseType?: | 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream'
-  }
+  };
 
   type ModelArguments<TParams = any> = {
     context: _Context
     params: TParams
     [key: string]: any
-  }
+  };
 
 interface RelationshipParams<T> extends AttributeParams {
   resolver: (
@@ -75,7 +75,7 @@ interface _Context {
     token: string
     expires: number
     roles?: string[]
-  }
+  };
 
 interface _Model {
   type: string
@@ -88,7 +88,7 @@ interface _Model {
   type OpenApiEntityIdentifier = {
     id: string
     type: string
-  }
+  };
 
 interface OpenApiEntity extends OpenApiEntityIdentifier {
   attributes: {
@@ -162,7 +162,7 @@ interface _ApiError {
     status: string
     contextId: string
     [key: string]: any
-  }
+  };
 
 interface ConfigDefinition {
   auth: {
