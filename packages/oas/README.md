@@ -24,7 +24,7 @@ const server = OASRouter(express(), {
     user: {
       type: 'object',
       properties: {
-        id: { type: 'string' required: true },
+        id: { type: 'string', required: true },
         name: { type: 'string' },
         age: { type: 'number' },
       },
@@ -46,7 +46,7 @@ server.get('/user/:id', definition({
     }
   ],
   responses: {
-    default: { schema: { "$ref": "#/components/schemas/user" } },
+    default: { schema: { $ref: 'user' } },
   },
 }), (req, res, next) => { /* Your business logic handler */ });
 
@@ -59,11 +59,11 @@ server.post(
       { 
         name: 'body',
         in: 'body',
-        schema: { "$ref": "#/components/schemas/user" },
+        schema: { $ref: 'user' },
       }
     ],
     responses: {
-      default: { schema: { "$ref": "#/components/schemas/user" } },
+      default: { schema: { $ref: 'user' } },
     },
   }),
   validation(), // Definition plugin needs to be set up first.

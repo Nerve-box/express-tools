@@ -1,29 +1,3 @@
-function link(resolver, model, clientCache, specifications: RouterSpecifications) {
-  return async (req) => {
-    req.context.res.removeHeader('X-Powered-By');
-
-    let data;
-
-    try {
-      data = await resolver(req.context);
-    }
-    catch (error) {
-      const formattedError = new Error(error, error.status || 500, error.stack, error.message, req.context);
-      req.context.res.writeHead(formattedError.status, specifications.responseHeaders);
-      return req.context.res.end(specifications.formatError(formattedError));
-    }
-
-    if (clientCache) specifications.responseHeaders['cache-control'] = clientCache;
-
-    if ([301, 302].includes(req.context.res.statusCode)) {
-      return req.context.res.end(data);
-    }
-
-    req.context.res.writeHead(200, specifications.responseHeaders);
-    req.context.res.end(specifications.formatResponse(data));
-  };
-}
-
 function guardAgainstBadRouteIntegrity(route: _Route, specifications: RouterSpecifications) {
   if (!(specifications.supportedMethods.includes(route.method))) throw new Error(`Invalid route verb ${route.method}`);
   if (route.method !== 'get') return;

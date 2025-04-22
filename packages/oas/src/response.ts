@@ -1,92 +1,63 @@
-/* const asJsonApiObject = (data, model, context) => {
-  const fieldList = context.params[`fields[${model.type}]`] ? context.params[`fields[${model.type}]`].split(',') : Object.keys(model.attributes);
-  return fieldList.reduce((acc: any, key: string) => {
-    if (model.attributes[key] && key !== 'id') acc.attributes[key] = data[key];
-    return acc;
-  }, { id: model.attributes.id.resolver(data), type: model.type, attributes: {} });
-};
+import check from 'swagger-route-validator';
+import {deferred} from './utils/async';
 
-function insertError(response, error) {
-  if (!response.meta) response.meta = {};
-  if (!response.meta.errors) response.meta.errors = [];
-  response.meta.errors.push(error);
-}
+export default function response(handler) {
+  function OASResponse(req, res, next) {
+    // TODO: validate that req.route exists and definition exists for route- it should be invoked as a middleware, not a root-level plugin
 
-function walkIncludeTree(cursor: string, node: string) {
-  const filter = new RegExp(`${node}[.,]?`, 'g');
-  return cursor.replace(filter, '');
-}
+    const operationId = `${req.method.toLowerCase()} ${req.route.path}`;
+    const matchingSpec = req._oas?.routes[operationId];
+    let method;
+    let buffer;
 
-function getIncludeTreeBase(cursor: string): string[] {
-  return cursor.split(',')
-    .map((statement) => {
-      const subBranches = statement.indexOf('.');
-      return statement.substring(0, subBranches > 0 ? subBranches : statement.length);
-    })
-    .filter((branch, index, branches) => branches.indexOf(branch) === index);
-}
-
-function parseRelationshipEntity(response, { data, context, model, parent, branch }, cursor) {
-  const newNode = model.marshal(data);
-  response.included.push(asJsonApiObject(newNode, model, context));
-  if (data.meta) response.meta = Object.assign(response.meta || {}, data.meta);
-  parent.relationships = parent.relationships || {};
-  if (parent.relationships[branch]) {
-    if (!Array.isArray(parent.relationships[branch].data)) {
-      parent.relationships[branch].data = [parent.relationships[branch].data];
+    const {resolve, promise} = deferred();
+    const hook = {
+      append:res.append,
+      attachment: res.attachment,
+      cookie: res.cookie,
+      clearCookie: res.clearCookie,
+      download: res.download,
+      end: (b) => {method = 'end'; buffer = b;},
+      format: res.format,
+      get: res.get,
+      json: (b) => {method = 'json'; buffer = b;},
+      jsonp: res.jsonp,
+      links: res.links,
+      location: res.location,
+      redirect: res.redirect,
+      render: res.render,
+      send: (b) => {method = 'send'; buffer = b;},
+      sendFile: res.sendFile,
+      sendStatus: res.sendStatus,
+      set: res.set,
+      status: res.status,
+      type: res.type,
+      vary: res.vary,
+      write: (b) => {method = 'write'; buffer = b;},
     }
-    parent.relationships[branch].data.push({ id: `${data.id}`, type: model.model ? model.model.type : model.type });
-  } else {
-    parent.relationships[branch] = { data: { id: `${data.id}`, type: model.model ? model.model.type : model.type } };
+
+    handler(req, hook, resolve);
+
+    // Need to augment SRV to allow passing a path/reponse body
+
+    promise.then(() => {
+      console.log('finished handler method: ', method, 'buffer', buffer, 'spec', matchingSpec?.responses[res.statusCode] || matchingSpec?.responses.default);
+      if (matchingSpec?.responses[res.statusCode] || matchingSpec?.responses.default) {
+        const errors = check(matchingSpec?.responses[res.statusCode] || matchingSpec?.responses.default, buffer);
+        if (errors.length > 0) {
+          const errObj = new Error(JSON.stringify(errors));
+          errObj.statusCode = 422;
+          delete errObj.stack;
+          return next(errObj);
+        }
+      }
+  
+      res[method](buffer);
+      return next();
+    });
   }
 
-  const nextNode = walkIncludeTree(cursor, branch);
-  if (nextNode !== '') return fetchIncludedRelationships(response, { data, context, model, parent: newNode }, nextNode);
-  return true;
-}
+  OASResponse.OASType = 'response';
 
-function fetchIncludedRelationships(response: any, { data, context, model, parent }, cursor: string) {
-  const includeTree = getIncludeTreeBase(cursor);
-  return Promise.all(includeTree.map(async (branch) => {
-    const handle: RelationshipParams<Promise<any>> = model.relationships[branch];
-    const targetModel = handle.model;
-    if (targetModel) {
-      const [errors, entities] = await to(handle.resolver(data, { context, params: context.params, relationship: branch, model: targetModel }));
-
-      if (errors) {
-        insertError(response, errors);
-        return null;
-      }
-      return Promise.all(
-        (Array.isArray(entities) ? entities : [entities])
-          .map((entity) => parseRelationshipEntity(response, { data: entity, context, model: targetModel, parent, branch }, cursor))
-      );
-    }
-    return null;
-  }));
+  return OASResponse;
 }
-
-export async function render({ context, data, model }) {
-  const response: JsonApiResponse<OpenApiEntity> = {};
-  if (!model) return data;
-  if (data && model) {
-    if (Array.isArray(data)) {
-      response.data = data.map((d) => asJsonApiObject(model.marshal(d), model, context));
-      if (context.params.include) {
-        response.included = [];
-        await Promise.all(data.map((d, i) => {
-          return fetchIncludedRelationships(response, { data: d, context, model, parent: response.data[i] }, context.params.include.join(','));
-        }));
-      }
-    } else {
-      response.data = model.marshal(data);
-      if (context.params.include) {
-        response.included = [];
-        await fetchIncludedRelationships(response, { data, context, model, parent: response.data }, context.params.include.join(','));
-      }
-    }
-  }
-  if (response.included && response.included.length === 0) delete response.included;
-  return response;
-}
-*/
