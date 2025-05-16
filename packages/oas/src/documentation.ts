@@ -114,7 +114,6 @@ function expressTokensToSwagger(path) {
 function render(spec: any) {
   const routes = Object.keys(spec);
 
-
   return {
     ...swaggerBase,
     paths: routes.reduce((acc, route) => {

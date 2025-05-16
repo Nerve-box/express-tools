@@ -1,5 +1,5 @@
-export default function Definition(routeDefinition) {
-  function OASDefinition(req, res, next) {
+export default function Definition(routeDefinition: any) {
+  function OASDefinition(req?: Express.Request, res?: Express.Response, next?: any) {
     if (!req) return routeDefinition;
 
     return next();

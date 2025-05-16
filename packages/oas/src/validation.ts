@@ -1,23 +1,16 @@
-import {validateRequest} from 'swagger-route-validator';
+import { expressRequestValidation } from 'swagger-route-validator';
+import { formatPathToOAS } from './utils';
 
 export default function validate() {
   function OASValidation(req, res, next) {
-    // TODO: validate that req.route exists- it should be invoked as a middleware, not a root-level plugin
+    if (!req.route) throw new Error('Validation middleware must be added to a route');
 
-    const operationId = `${req.method.toLowerCase()} ${req.route.path}`;
-    const matchingSpec = req._oas?.routes[operationId];
+    const operationId = formatPathToOAS(req.route.path); // TODO: handle spec basepath and potential subrouters
+    const matchingSpec = req._oas?.paths?.[operationId]?.[req.method.toLowerCase()];
 
-    if (matchingSpec) {
-      const errors = validateRequest(matchingSpec, req, req._oas);
-      if (errors.length > 0) {
-        const errObj = new Error(JSON.stringify(errors));
-        errObj.statusCode = 400;
-        delete errObj.stack;
-        return next(errObj);
-      }
-    }
-
-    return next();
+    if (matchingSpec) return expressRequestValidation(matchingSpec, req._oas)(req, res, next);
+  
+    throw new Error(`Validation middleware added, but no definition could be found for ${operationId}.${req.method.toLowerCase()}`);
   }
 
   OASValidation.OASType = 'validation';

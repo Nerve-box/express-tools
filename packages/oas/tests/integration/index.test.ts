@@ -1,4 +1,5 @@
 import express from 'express';
+import exampleSpec from '../static/exampleSpec';
 import { request } from 'undici';
 import { definition, documentation, response as OASResponse, router as OASRouter, validation } from '../../src';
 
@@ -8,18 +9,7 @@ describe('Basic express router', () => {
   const port = 10000 + Math.round(Math.random() * 10000);
 
   beforeEach(() => {
-    server = OASRouter(express(), {
-      definitions: {
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', required: true },
-            name: { type: 'string' },
-            age: { type: 'number' },
-          },
-        },
-      },
-    });
+    server = OASRouter(express(), exampleSpec);
   });
 
   afterEach(() => {
@@ -248,8 +238,8 @@ describe('Basic express router', () => {
         statusCode,
         body,
       } = await request(`http://localhost:${port}/foo/test`);
-      //const raw = await body.text();
-      //console.log('RAW', raw)
+      // const raw = await body.text();
+      // console.log('RAW', raw)
       const response = await body.json();
 
       expect(statusCode).toEqual(200);

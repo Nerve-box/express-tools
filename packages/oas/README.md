@@ -21,7 +21,7 @@ Add the plugin to your express app:
 ```javascript
 
 import Express from 'express';
-import {definition, documentation, response as OASResponse, router as OASRouter, validation} from '@express-tools/oas';
+import {definition, documentation, response, router as OASRouter, validation} from '@express-tools/oas';
 
 // Wraps an existing API router or subrouter and adds an OpenAPI spec
 const server = OASRouter(express(), {
