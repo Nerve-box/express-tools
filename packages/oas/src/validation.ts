@@ -1,4 +1,4 @@
-import check from 'swagger-route-validator';
+import {validateRequest} from 'swagger-route-validator';
 
 export default function validate() {
   function OASValidation(req, res, next) {
@@ -8,7 +8,7 @@ export default function validate() {
     const matchingSpec = req._oas?.routes[operationId];
 
     if (matchingSpec) {
-      const errors = check(matchingSpec, req);
+      const errors = validateRequest(matchingSpec, req, req._oas);
       if (errors.length > 0) {
         const errObj = new Error(JSON.stringify(errors));
         errObj.statusCode = 400;

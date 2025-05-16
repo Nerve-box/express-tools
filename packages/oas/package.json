@@ -16,7 +16,7 @@
         "schema"
     ],
     "dependencies": {
-        "swagger-route-validator": "^2.0.1"
+        "swagger-route-validator": "^3.0.1"
     },
     "devDependencies": {
       "express": "^5.1.0",

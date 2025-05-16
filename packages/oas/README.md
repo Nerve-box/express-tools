@@ -2,39 +2,38 @@
 
 *Bring your Express API to the modern web*
 
+- Express 5 compatible 
+- Request/response validation
+- Dynamically generated documentation 
+- Define as little or as much of your spec in advance 
+
 ## Getting started
 
 ### Installation
 
-To add Open-API compatibility to your service:
-
 ```bash
 npm i @express-tools/oas
 ```
+### Usage
+
+Add the plugin to your express app:
 
 ```javascript
 
 import Express from 'express';
 import {definition, documentation, response as OASResponse, router as OASRouter, validation} from '@express-tools/oas';
 
-// Wraps your existing API router or subrouter
-// Load your schemas in place, which the plugin will connect via OAS' $Ref
+// Wraps an existing API router or subrouter and adds an OpenAPI spec
 const server = OASRouter(express(), {
-  schemas: {
-    user: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', required: true },
-        name: { type: 'string' },
-        age: { type: 'number' },
-      },
-    },
-  },
+  /* An OpenAPI spec */
 });
 
+```
 
-// The definition plugin allows the OAS plugin to detect this endpoint and enable validation, auto-generated documentation, etc.
-// Many route properties will be automatically derived from express, though they can be overwritten.
+The definition middleware enables you to define or override the properties of a route
+
+```javascript
+
 server.get('/user/:id', definition({
   method: 'get',
   description: 'Get a User by Id',
@@ -46,11 +45,27 @@ server.get('/user/:id', definition({
     }
   ],
   responses: {
-    default: { schema: { $ref: 'user' } },
+    default: { schema: { $ref: '#/definitions/user' } },
   },
 }), (req, res, next) => { /* Your business logic handler */ });
 
-// Optionally, you can add more plugins to validate requests or modify your route's response format.
+```
+
+The validation middleware checks the request to make sure it matches the spec and overrides.
+
+```javascript
+
+server.post(
+  '/user',
+  validation(),
+  (req, res, next) => { /* Your business logic handler */ });
+
+```
+
+The response middleware adds response validation to your route
+
+```javascript
+
 server.post(
   '/user',
   definition({
@@ -66,14 +81,16 @@ server.post(
       default: { schema: { $ref: 'user' } },
     },
   }),
-  validation(), // Definition plugin needs to be set up first.
-  response((req, res, next) => { /* Your business logic handler */ }));
+  response(),
+  (req, res, next) => { /* Your business logic handler */ });
+
+```
+
+The documentation plugin prints out your spec and all overrides
+
+```javascript
 
 server.get('/docs', documentation());
-
-server.listen(9001, () => {
-  console.log(`App listening on port 9001`)
-});
 
 ```
 

@@ -9,7 +9,7 @@ describe('Basic express router', () => {
 
   beforeEach(() => {
     server = OASRouter(express(), {
-      schemas: {
+      definitions: {
         user: {
           type: 'object',
           properties: {
