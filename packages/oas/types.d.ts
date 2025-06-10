@@ -2,7 +2,7 @@ import { OpenApiSpecification } from 'swagger-route-validator';
 import { Express } from 'express';
 
 interface RouteDefinitionOverride {
-
+  get: any
 }
 
 declare module '@express-tools/oas' {

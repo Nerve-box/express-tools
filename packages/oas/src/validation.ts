@@ -9,8 +9,8 @@ export default function validate() {
     const matchingSpec = req._oas?.paths?.[operationId]?.[req.method.toLowerCase()];
 
     if (matchingSpec) return expressRequestValidation(matchingSpec, req._oas)(req, res, next);
-  
-    throw new Error(`Validation middleware added, but no definition could be found for ${operationId}.${req.method.toLowerCase()}`);
+
+    throw new Error(`Request validation middleware added, but no definition could be found for ${operationId}.${req.method.toLowerCase()}`);
   }
 
   OASValidation.OASType = 'validation';

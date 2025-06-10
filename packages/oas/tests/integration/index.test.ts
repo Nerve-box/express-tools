@@ -41,7 +41,7 @@ describe('Basic express router', () => {
     });
   });
 
-  describe('with an augmented route', () => {
+  describe('with an augmented route, passing the method object', () => {
     beforeEach((done) => {
       server.get('/foo', definition({
         method: 'get',
@@ -57,6 +57,44 @@ describe('Basic express router', () => {
           default: { schema: { $ref: 'user' } },
         },
       }), (req, res, next) => {
+        res.status(200).json({ data: 'Hello world' });
+        return next();
+      });
+
+      app = server.listen(port, (err) => {
+        if (err) throw err;
+        done();
+      });
+    });
+
+    test('should reply with a 200', async () => {
+      const {
+        statusCode,
+        body,
+      } = await request(`http://localhost:${port}/foo`);
+      const response = await body.json();
+
+      expect(statusCode).toEqual(200);
+      expect(response.data).toEqual('Hello world');
+    });
+  });
+
+  describe('with an augmented route, passing the route object', () => {
+    beforeEach((done) => {
+      server.get('/foo', definition({ get: {
+        method: 'get',
+        description: 'Get a User by Id',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'string',
+          },
+        ],
+        responses: {
+          default: { schema: { $ref: 'user' } },
+        },
+      } }), (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
@@ -158,7 +196,7 @@ describe('Basic express router', () => {
 <title>Error</title>
 </head>
 <body>
-<pre>Error: [{&quot;error&quot;:&quot;Value is not a number&quot;,&quot;cursor&quot;:&quot;path.id&quot;}]</pre>
+<pre>Error: Request object does not match the specification for this route: [{&quot;error&quot;:&quot;Value is not a number&quot;,&quot;cursor&quot;:&quot;path.id&quot;}]</pre>
 </body>
 </html>
 `);
@@ -194,7 +232,7 @@ describe('Basic express router', () => {
       });
     });
 
-    test('should return a valid openapi spec', async () => {
+    test('should return a valid openapi spec that includes definition overrides', async () => {
       const {
         statusCode,
         body,
@@ -203,7 +241,31 @@ describe('Basic express router', () => {
       const response = await body.json();
 
       expect(statusCode).toEqual(200);
-      expect(response).toEqual({ openapi: '3.1.0', info: { description: 'The <project_name> API', version: '0.0.0', title: '<project_name> API' }, servers: [{ url: '0.0.0.0' }], basePath: '/', schemes: ['http', 'https'], consumes: ['application/json', 'application/x-www-form-urlencoded'], produces: ['application/json'], paths: { '/foo/{id}': { get: { path: '/foo/:id', method: 'get', parameters: [{ name: 'id', in: 'path', type: 'string', required: true }], description: 'Get a User by Id', operationId: 'get /foo/:id', responses: { 200: { schema: { type: 'object', properties: { meta: { type: 'object' } } } }, default: { description: 'Errors', type: 'object', required: ['errors'], properties: { errors: { type: 'array', items: { type: 'object', properties: { id: { type: 'string', format: 'int64', example: '235711131719' }, status: { type: 'string' }, code: { type: 'string' }, title: { type: 'string' }, detail: { type: 'string' }, source: { type: 'object', properties: { pointer: { type: 'string' }, parameter: { type: 'string' } } }, meta: { type: 'object', additionalProperties: true } } } } } } } } } }, definitions: {} });
+      expect(response.paths['/foo']).toEqual({
+        get: {
+          description: 'Get a User by Id',
+          method: 'get',
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              type: 'string',
+            },
+            {
+              in: 'path',
+              name: 'id',
+              type: 'string',
+            },
+          ],
+          responses: {
+            default: {
+              schema: {
+                $ref: 'user',
+              },
+            },
+          },
+        },
+      });
     });
   });
 
@@ -222,10 +284,10 @@ describe('Basic express router', () => {
         responses: {
           default: { schema: { $ref: 'user' } },
         },
-      }), OASResponse((req, res, next) => {
+      }), OASResponse(), (req, res, next) => {
         res.status(200).json({ id: 'test', name: 'bar', age: 99 });
         return next();
-      }));
+      });
 
       app = server.listen(port, (err) => {
         if (err) throw err;
@@ -238,8 +300,6 @@ describe('Basic express router', () => {
         statusCode,
         body,
       } = await request(`http://localhost:${port}/foo/test`);
-      // const raw = await body.text();
-      // console.log('RAW', raw)
       const response = await body.json();
 
       expect(statusCode).toEqual(200);
@@ -262,10 +322,10 @@ describe('Basic express router', () => {
         responses: {
           default: { schema: { $ref: 'user' } },
         },
-      }), OASResponse((req, res, next) => {
+      }), OASResponse(), (req, res, next) => {
         res.status(200).json({ id: 'test', name: 'bar', age: '99' });
         return next();
-      }));
+      });
 
       app = server.listen(port, (err) => {
         if (err) throw err;

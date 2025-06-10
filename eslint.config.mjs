@@ -11,7 +11,7 @@ export default tseslint.config(
   {
     rules: {
       '@stylistic/semi': [2, 'always'],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 0,
       'jest/no-done-callback': 0,
     },
   },

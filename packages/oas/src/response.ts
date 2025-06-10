@@ -1,13 +1,14 @@
-import {expressResponseValidation} from 'swagger-route-validator';
+import { expressResponseValidation } from 'swagger-route-validator';
+import { formatPathToOAS } from './utils';
 
-export default function response(handler) {
+export default function response() {
   function OASResponse(req, res, next) {
-    // TODO: validate that req.route exists and definition exists for route- it should be invoked as a middleware, not a root-level plugin
+    const operationId = formatPathToOAS(req.route.path); // TODO: handle spec basepath and potential subrouters
+    const matchingSpec = req._oas?.paths?.[operationId]?.[req.method.toLowerCase()];
 
-    const operationId = `${req.method.toLowerCase()} ${req.route.path}`;
-    const matchingSpec = req._oas?.routes[operationId];
+    if (matchingSpec) return expressResponseValidation(matchingSpec, {}, req._oas)(req, res, next);
 
-    return expressResponseValidation(matchingSpec, {}, req._oas)(req, res, next);
+    throw new Error(`Response validation middleware added, but no definition could be found for ${operationId}.${req.method.toLowerCase()}`);
   }
 
   OASResponse.OASType = 'response';

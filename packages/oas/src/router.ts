@@ -1,9 +1,8 @@
-import { Express } from "express";
-import { OpenApiSpecification } from "swagger-route-validator";
-import { formatPathToOAS, mergeDefinitions } from "./utils";
+import { Express } from 'express';
+import { OpenApiSpecification } from 'swagger-route-validator';
+import { formatPathToOAS, mergeDefinitions } from './utils';
 
 export default function router(expressApp: Express, spec: OpenApiSpecification): Express {
-
   // Store a working copy of the spec in express app
   expressApp['_oas'] = Object.assign({}, spec);
 
@@ -24,9 +23,11 @@ export default function router(expressApp: Express, spec: OpenApiSpecification):
         const definitionPlugin = expressApp.router.stack[i].route.stack.find(middleware => middleware.handle.OASType === 'definition');
         if (definitionPlugin) {
           const override = definitionPlugin.handle();
+
           // Check if path level or method level
+          expressApp['_oas'].paths[formatPathToOAS(expressApp.router.stack[i].route.path)] = expressApp['_oas'].paths[formatPathToOAS(expressApp.router.stack[i].route.path)] || {};
           if (override[definitionPlugin.method]) mergeDefinitions(expressApp['_oas'].paths[formatPathToOAS(expressApp.router.stack[i].route.path)], override);
-          else mergeDefinitions(expressApp['_oas'].paths[formatPathToOAS(expressApp.router.stack[i].route.path)][definitionPlugin.method], override[definitionPlugin.method]);
+          else mergeDefinitions(expressApp['_oas'].paths[formatPathToOAS(expressApp.router.stack[i].route.path)], { [definitionPlugin.method]: override });
         }
       }
     }
