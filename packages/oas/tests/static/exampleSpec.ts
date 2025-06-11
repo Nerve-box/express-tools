@@ -431,6 +431,15 @@ export default
     },
   },
   components: {
+    user: {
+      description: 'User model',
+      type: 'object',
+      properties: {
+        id: { type: 'string', required: true },
+        name: { type: 'string' },
+        age: { type: 'integer' },
+      },
+    },
     parameters: {
       alt: {
         description: 'Data format for the response.',

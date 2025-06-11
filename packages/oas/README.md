@@ -5,7 +5,7 @@
 - Express 5 compatible 
 - Request/response validation
 - Dynamically generated documentation 
-- Define as little or as much of your spec in advance 
+- Define or redefine as much of your spec 
 
 ## Getting started
 
@@ -35,7 +35,6 @@ The definition middleware enables you to define or override the properties of a 
 ```javascript
 
 server.get('/user/:id', definition({
-  method: 'get',
   description: 'Get a User by Id',
   parameters: [
     { 

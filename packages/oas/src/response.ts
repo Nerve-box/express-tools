@@ -3,7 +3,11 @@ import { formatPathToOAS } from './utils';
 
 export default function response() {
   function OASResponse(req, res, next) {
-    const operationId = formatPathToOAS(req.route.path); // TODO: handle spec basepath and potential subrouters
+    if (!req.route) throw new Error('Response validation middleware must be added to a route');
+
+    let operationId = formatPathToOAS(req.route.path);
+    // substract spec baspath if exists
+    if (req._oas?.basePath && req._oas?.basePath !== '/' && operationId.indexOf(req._oas?.basePath) === 0) operationId = operationId.replace(req._oas?.basePath, '');
     const matchingSpec = req._oas?.paths?.[operationId]?.[req.method.toLowerCase()];
 
     if (matchingSpec) return expressResponseValidation(matchingSpec, {}, req._oas)(req, res, next);

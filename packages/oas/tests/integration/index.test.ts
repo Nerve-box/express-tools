@@ -6,14 +6,17 @@ import { definition, documentation, response as OASResponse, router as OASRouter
 describe('Basic express router', () => {
   let server;
   let app;
-  const port = 10000 + Math.round(Math.random() * 10000);
+  let port;
 
   beforeEach(() => {
     server = OASRouter(express(), exampleSpec);
+    port = 10000 + Math.round(Math.random() * 10000);
   });
 
   afterEach(() => {
     if (app) app.close();
+    server = null;
+    app = null;
   });
 
   describe('with a non-augmented route', () => {
@@ -44,7 +47,6 @@ describe('Basic express router', () => {
   describe('with an augmented route, passing the method object', () => {
     beforeEach((done) => {
       server.get('/foo', definition({
-        method: 'get',
         description: 'Get a User by Id',
         parameters: [
           {
@@ -54,7 +56,7 @@ describe('Basic express router', () => {
           },
         ],
         responses: {
-          default: { schema: { $ref: 'user' } },
+          default: { schema: { $ref: '#/components/user' } },
         },
       }), (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
@@ -82,7 +84,6 @@ describe('Basic express router', () => {
   describe('with an augmented route, passing the route object', () => {
     beforeEach((done) => {
       server.get('/foo', definition({ get: {
-        method: 'get',
         description: 'Get a User by Id',
         parameters: [
           {
@@ -92,7 +93,7 @@ describe('Basic express router', () => {
           },
         ],
         responses: {
-          default: { schema: { $ref: 'user' } },
+          default: { schema: { $ref: '#/components/user' } },
         },
       } }), (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
@@ -120,7 +121,6 @@ describe('Basic express router', () => {
   describe('with validation', () => {
     beforeEach((done) => {
       server.get('/foo/:id', definition({
-        method: 'get',
         description: 'Get a User by Id',
         parameters: [
           {
@@ -130,7 +130,7 @@ describe('Basic express router', () => {
           },
         ],
         responses: {
-          default: { schema: { $ref: 'user' } },
+          default: { schema: { $ref: '#/components/user' } },
         },
       }), validation(), (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
@@ -158,7 +158,6 @@ describe('Basic express router', () => {
   describe('with errored validation', () => {
     beforeEach((done) => {
       server.get('/foo/:id', definition({
-        method: 'get',
         description: 'Get a User by Id',
         parameters: [
           {
@@ -168,7 +167,7 @@ describe('Basic express router', () => {
           },
         ],
         responses: {
-          default: { schema: { $ref: 'user' } },
+          default: { schema: { $ref: '#/components/user' } },
         },
       }), validation(), (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
@@ -206,7 +205,6 @@ describe('Basic express router', () => {
   describe('description endpoint', () => {
     beforeEach((done) => {
       server.get('/foo/:id', definition({
-        method: 'get',
         description: 'Get a User by Id',
         parameters: [
           {
@@ -217,7 +215,7 @@ describe('Basic express router', () => {
           },
         ],
         responses: {
-          default: { schema: { $ref: 'user' } },
+          default: { schema: { $ref: '#/components/user' } },
         },
       }), (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
@@ -241,26 +239,21 @@ describe('Basic express router', () => {
       const response = await body.json();
 
       expect(statusCode).toEqual(200);
-      expect(response.paths['/foo']).toEqual({
+      expect(response.paths['/foo/{id}']).toEqual({
         get: {
           description: 'Get a User by Id',
-          method: 'get',
           parameters: [
             {
               in: 'path',
               name: 'id',
               type: 'string',
-            },
-            {
-              in: 'path',
-              name: 'id',
-              type: 'string',
+              required: true
             },
           ],
           responses: {
             default: {
               schema: {
-                $ref: 'user',
+                $ref: '#/components/user',
               },
             },
           },
@@ -272,7 +265,6 @@ describe('Basic express router', () => {
   describe('with response formatting on valid body', () => {
     beforeEach((done) => {
       server.get('/foo/:id', definition({
-        method: 'get',
         description: 'Get a User by Id',
         parameters: [
           {
@@ -282,7 +274,7 @@ describe('Basic express router', () => {
           },
         ],
         responses: {
-          default: { schema: { $ref: 'user' } },
+          default: { schema: { $ref: '#/components/user' } },
         },
       }), OASResponse(), (req, res, next) => {
         res.status(200).json({ id: 'test', name: 'bar', age: 99 });
@@ -300,6 +292,7 @@ describe('Basic express router', () => {
         statusCode,
         body,
       } = await request(`http://localhost:${port}/foo/test`);
+
       const response = await body.json();
 
       expect(statusCode).toEqual(200);
@@ -310,7 +303,6 @@ describe('Basic express router', () => {
   describe('with response formatting on invalid body', () => {
     beforeEach((done) => {
       server.get('/foo/:id', definition({
-        method: 'get',
         description: 'Get a User by Id',
         parameters: [
           {
@@ -320,10 +312,10 @@ describe('Basic express router', () => {
           },
         ],
         responses: {
-          default: { schema: { $ref: 'user' } },
+          default: { schema: { $ref: '#/components/user' } },
         },
       }), OASResponse(), (req, res, next) => {
-        res.status(200).json({ id: 'test', name: 'bar', age: '99' });
+        res.status(200).json({ id: 'test', name: 'bar', age: 'michael' });
         return next();
       });
 
@@ -348,7 +340,7 @@ describe('Basic express router', () => {
 <title>Error</title>
 </head>
 <body>
-<pre>Error: [{&quot;error&quot;:&quot;Value is not a number&quot;,&quot;cursor&quot;:&quot;path.id&quot;}]</pre>
+<pre>Error: Response body does not match the specification for this route: [{&quot;error&quot;:&quot;Value is not an integer&quot;,&quot;cursor&quot;:&quot;:user.age&quot;}]</pre>
 </body>
 </html>
 `);
