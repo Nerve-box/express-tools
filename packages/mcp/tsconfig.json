@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+      "allowJs": false,
+      "allowImportingTsExtensions": true,
+      "alwaysStrict": false,
+      "checkJs": false,
+      "esModuleInterop": true,
+      "module": "nodenext",
+      "noEmit": true,
+      "resolveJsonModule": true,
+      "skipLibCheck": true,
+      "skipDefaultLibCheck": true,
+      "isolatedModules": true,
+      "target": "ES2022",
+      "types": [
+        "jest",
+        "node"
+      ],
+      "outDir": "./bin",
+    },
+    "exclude": [
+      "node_modules",
+      "**/*.test.ts"
+    ],
+    "include": [
+      "types.d.ts",
+      "src/**/*.ts",
+    ]
+  }
+    
