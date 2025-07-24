@@ -44,7 +44,14 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
       serverInfo: spec.serverInfo,
     }));
     expressApp._mcp.server.addMethod('tools/list', () => ({ tools: Object.values(expressApp._mcp.tools)}));
-    expressApp._mcp.server.addMethod('tools/call', ({ name, arguments: args}) => expressApp._mcp.handlers[name].call(null, { params: args }));
+    expressApp._mcp.server.addMethod('tools/call', ({ name, arguments: args}, req) => {
+      const outputType = expressApp._mcp.tools[name].outputSchema?.properties?.type?.type || 'text';
+
+      return Promise.resolve().then(() => {
+        return expressApp._mcp.handlers[name].call(null, args, req)
+      })
+      .then((data) => ({ content: [{ type: outputType, [outputType]: data }] }));
+    });
 
     // Scan routes for definition middleware
     for (let i = 0; i < stack.length; i++) {
@@ -52,20 +59,17 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
         const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle.MCPType === 'definition');
         if (definitionPlugin) {
           const override = definitionPlugin.handle();
-
           let operationId = override && override.name;
 
           expressApp['_mcp'].tools[operationId] = override;
-          expressApp['_mcp'].handlers[operationId] = stack[i].route.stack.at(-1).handle;
+          expressApp['_mcp'].handlers[operationId] = override.handler || stack[i].route.stack.at(-1).handle;
         }
       }
     }
 
     expressApp.post(spec.basePath || '/mcp', (req, res, next) => {
-      const jsonRPCRequest = req.body;
-      console.log('body: ', jsonRPCRequest)
-  
-      expressApp._mcp.server.receive(jsonRPCRequest).then((jsonRPCResponse) => {
+      const jsonRPCRequest = req.body;  
+      expressApp._mcp.server.receive(jsonRPCRequest, req).then((jsonRPCResponse) => {
         if (jsonRPCResponse) {
           res.json(jsonRPCResponse);
         } else {
