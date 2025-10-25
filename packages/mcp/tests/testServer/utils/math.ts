@@ -1,13 +1,13 @@
 /**
  * Machin's PI algorithm
  * Inspired by https://trans4mind.com/personal_development/JavaScript/longnumPiMachin.htm
- * 
+ *
  * calc(d) Returns PI, where `d` is the number of desired digits
  * has with the original code and with Machin's formula, it provides a few extra
  * digits, which are not guaranteed to be exact, but are leftovers from the calculations.
  */
 
-/* Local variables -----------------------------------------------------------*/
+/* Local variables ----------------------------------------------------------- */
 
 // Math method cache
 const pow = Math.pow;
@@ -16,10 +16,10 @@ const ceil = Math.ceil;
 const abs = Math.abs;
 
 // JS Number bases
-const base = pow(10,11);
+const base = pow(10, 11);
 const cellSize = floor(Math.log(base) / Math.LN10);
 
-/* Methods -------------------------------------------------------------------*/
+/* Methods ------------------------------------------------------------------- */
 
 function clearArray(aX, iBase) {
   aX.fill(null);
@@ -39,17 +39,17 @@ function add(n, aX, aY) {
       carry = 1;
       aX[i] = aX[i] - base;
     }
-  }  
+  }
 }
 
 function substract(n, aX, aY) {
   for (let i = n - 1; i >= 0; i--) {
     aX[i] = aX[i] - aY[i];
-		if (aX[i] < 0 && i > 0) {
+    if (aX[i] < 0 && i > 0) {
       aX[i] = aX[i] + base;
-      aX[i-1] = aX[i-1] - 1;
-		}
-  }  
+      aX[i - 1] = aX[i - 1] - 1;
+    }
+  }
 }
 
 function multiply(n, aX, imult) {
@@ -64,13 +64,13 @@ function multiply(n, aX, imult) {
       carry = 0;
     }
     aX[i] = prod;
-	}
+  }
 }
 
 function divide(n, aX, iDiv, aY) {
   let carry = 0;
   for (let i = 0; i < n; i++) {
-    let currVal = aX[i] + carry * base;
+    const currVal = aX[i] + carry * base;
     const theDiv = floor(currVal / iDiv);
     carry = currVal - theDiv * iDiv;
     aY[i] = theDiv;
@@ -89,8 +89,8 @@ function arctan(iAng, n, aX, aAngle, aDivK) {
   while (!isEmpty(aAngle)) {
     divide(n, aAngle, iAng_squared, aAngle);
     divide(n, aAngle, k, aDivK);
-    if (sign > 0) { (0, add)(n, aX, aDivK); }
-    else { (0, substract)(n, aX, aDivK); }
+    if (sign > 0) add(n, aX, aDivK);
+    else substract(n, aX, aDivK);
     k = k + 2;
     sign = 1 - sign;
   }
@@ -116,8 +116,8 @@ function PICalc(numDec = 10) {
   for (let i = 0; coeff[i] !== 0; i++) {
     arctan(iAng[i], arrayLength, aArctan, aAngle, aDivK);
     multiply(arrayLength, aArctan, abs(coeff[i]));
-    if (coeff[i] > 0) { (0, add)(arrayLength, aPI, aArctan); }
-    else { (0, substract)(arrayLength, aPI, aArctan); }
+    if (coeff[i] > 0) add(arrayLength, aPI, aArctan);
+    else substract(arrayLength, aPI, aArctan);
   }
 
   multiply(arrayLength, aPI, 4);
@@ -127,11 +127,11 @@ function PICalc(numDec = 10) {
 function print(aPI) {
   return aPI.map((block, i) => {
     if (i === 0) return '3.';
-    let blockDef = `${block}`;
+    const blockDef = `${block}`;
     return '0'.repeat(cellSize - blockDef.length) + blockDef;
   }).join('');
 }
 
-/* Exports -------------------------------------------------------------------*/
+/* Exports ------------------------------------------------------------------- */
 
 export { PICalc };

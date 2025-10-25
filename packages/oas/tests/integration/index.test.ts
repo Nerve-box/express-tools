@@ -247,7 +247,7 @@ describe('Basic express router', () => {
               in: 'path',
               name: 'id',
               type: 'string',
-              required: true
+              required: true,
             },
           ],
           responses: {

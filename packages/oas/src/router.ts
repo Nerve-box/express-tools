@@ -11,6 +11,7 @@ interface Spec extends Partial<OpenApiSpecification> {
 }
 
 export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
+  let scanned: boolean = false;
 
   // Store a working copy of the spec in express app
   expressApp['_oas'] = {
@@ -37,6 +38,9 @@ export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
   }
 
   function initOASRouter() {
+    if (scanned) throw new Error('OAS Router has already scanned for routes. Make sure it is only invoked once.');
+    scanned = true;
+
     const stack = expressApp.stack || expressApp.router.stack;
 
     // Scan routes for definition middleware

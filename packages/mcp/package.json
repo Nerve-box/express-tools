@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "description": "MCP plugin for express",
     "license": "Apache-2.0",
+    "main": "bin/index.js",
     "keywords": [
         "express",
         "model",
@@ -15,8 +16,9 @@
         "definition",
         "schema"
     ],
+    "files": ["bin"],
     "dependencies": {
-        "json-rpc-2.0":" ^1.7.0"
+        "json-rpc-2.0": "^1.7.0"
     },
     "devDependencies": {
       "express": "^5.1.0",
@@ -30,7 +32,8 @@
         "build": "rm -rf ./bin && tsc && cp ./package.json ./bin/package.json && cp ./README.md ./bin/README.md && cp ./types.d.ts ./bin/types.d.ts",
         "test:unit": "jest src/*",
         "test:integration": "jest tests/*",
-        "test": "npm run test:unit && npm run test:integration"
+        "test": "npm run test:unit && npm run test:integration",
+        "prepublishOnly": "npm run build && cp ../../LICENSE ./LICENSE"
     },
     "homepage": "https://github.com/nerve-box/express-tools",
   "contributors": [

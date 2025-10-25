@@ -1,8 +1,6 @@
 export default function documentation() {
-  function OASDocumentation(req, res, next) {
+  function OASDocumentation(req, res) {
     res.json(req._oas);
-
-    return next();
   }
 
   OASDocumentation.OASType = 'documentation';

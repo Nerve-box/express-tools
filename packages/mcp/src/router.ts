@@ -9,15 +9,17 @@ interface MCPRouter extends Express.Express {
   }
 }
 
-
 export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
-
   if (!spec.serverInfo) throw new Error('serverInfo is missing from MCP config.');
 
+  let scanned: boolean = false;
 
   // Store a working copy of the spec in express app
   expressApp['_mcp'] = {
-    tools: (spec.tools || []).reduce((acc, curr) => { acc[curr.name] = curr; return curr;}, {}),
+    tools: (spec.tools || []).reduce((acc, curr) => {
+      acc[curr.name] = curr;
+      return acc;
+    }, {}),
     handlers: spec.handlers || {},
     server: new JSONRPCServer(),
   };
@@ -32,25 +34,28 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
   expressApp.use(MCPRouter);
 
   function initMCPRouter() {
+    if (scanned) throw new Error('MCP Router has already scanned for routes. Make sure it is only invoked once.');
+    scanned = true;
+
     const stack = expressApp.stack || expressApp.router.stack;
 
     expressApp._mcp.server.addMethod('initialize', () => ({
       protocolVersion: '2024-11-05',
       capabilities: {
         tools: {
-          listChanged: false
-        }
+          listChanged: false,
+        },
       },
       serverInfo: spec.serverInfo,
     }));
-    expressApp._mcp.server.addMethod('tools/list', () => ({ tools: Object.values(expressApp._mcp.tools)}));
-    expressApp._mcp.server.addMethod('tools/call', ({ name, arguments: args}, req) => {
+    expressApp._mcp.server.addMethod('tools/list', () => ({ tools: Object.values(expressApp._mcp.tools) }));
+    expressApp._mcp.server.addMethod('tools/call', ({ name, arguments: args }, req) => {
       const outputType = expressApp._mcp.tools[name].outputSchema?.properties?.type?.type || 'text';
 
       return Promise.resolve().then(() => {
-        return expressApp._mcp.handlers[name].call(null, args, req)
+        return expressApp._mcp.handlers[name].call(null, args, req);
       })
-      .then((data) => ({ content: [{ type: outputType, [outputType]: data }] }));
+        .then(data => ({ content: [{ type: outputType, [outputType]: data }] }));
     });
 
     // Scan routes for definition middleware
@@ -59,7 +64,7 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
         const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle.MCPType === 'definition');
         if (definitionPlugin) {
           const override = definitionPlugin.handle();
-          let operationId = override && override.name;
+          const operationId = override && override.name;
 
           expressApp['_mcp'].tools[operationId] = override;
           expressApp['_mcp'].handlers[operationId] = override.handler || stack[i].route.stack.at(-1).handle;
@@ -67,12 +72,13 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
       }
     }
 
-    expressApp.post(spec.basePath || '/mcp', (req, res, next) => {
-      const jsonRPCRequest = req.body;  
+    expressApp.post(spec.basePath || '/mcp', (req, res) => {
+      const jsonRPCRequest = req.body;
       expressApp._mcp.server.receive(jsonRPCRequest, req).then((jsonRPCResponse) => {
         if (jsonRPCResponse) {
           res.json(jsonRPCResponse);
-        } else {
+        }
+        else {
           res.sendStatus(204);
         }
       });

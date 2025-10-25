@@ -9,7 +9,6 @@ export default function validate() {
     // substract spec baspath if exists
     if (req._oas?.basePath && req._oas?.basePath !== '/' && operationId.indexOf(req._oas?.basePath) === 0) operationId = operationId.replace(req._oas?.basePath, '');
 
-    // console.log('route:', req.route.path, 'operationId', operationId)
     const matchingSpec = req._oas?.paths?.[operationId]?.[req.method.toLowerCase()];
 
     if (matchingSpec) return expressRequestValidation(matchingSpec, req._oas)(req, res, next);
