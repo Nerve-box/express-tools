@@ -1,5 +1,5 @@
-import definition from './definition.ts';
-import router from './router.ts';
+import definition from './definition';
+import router from './router';
 
 export {
   definition,

@@ -30,8 +30,6 @@ export default function Definition(routeDefinition: MCPToolDefinition) {
   function MCPDefinition(req?: Request, res?: Response, next?: NextFunction) {
     if (!req) return routeDefinition;
 
-    req._MCPOperationId = routeDefinition.name;
-
     return next?.();
   }
 

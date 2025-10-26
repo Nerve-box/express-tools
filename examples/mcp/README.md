@@ -7,8 +7,8 @@ This example demonstrates how to use the `@express-tools/mcp` package to add Mod
 - MCP (Model Context Protocol) support via JSON-RPC 2.0
 - Expose Express routes as AI-accessible tools
 - Automatic tool registration and discovery
-- Custom handlers for MCP-specific logic
-- Dual access: HTTP and MCP protocol
+- Unified handlers that work for both HTTP and MCP
+- Dual access: Same handler serves HTTP and MCP protocol
 
 ## Installation
 
@@ -22,17 +22,23 @@ cd examples/mcp
 ## Running the Example
 
 ```bash
-node simple-tools.ts
+npm start
+```
+
+Or directly:
+
+```bash
+tsx index.ts
 ```
 
 ## Usage
 
-Once running, the server will be available at `http://localhost:3000` with the MCP endpoint at `/mcp`
+Once running, the server will be available at `http://localhost:9001` with the MCP endpoint at `/mcp`
 
 ### Initialize MCP Connection
 
 ```bash
-curl -X POST http://localhost:3000/mcp \
+curl -X POST http://localhost:9001/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
 ```
@@ -42,7 +48,7 @@ Response includes server info and capabilities.
 ### List Available Tools
 
 ```bash
-curl -X POST http://localhost:3000/mcp \
+curl -X POST http://localhost:9001/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 ```
@@ -52,15 +58,15 @@ Returns all registered tools with their schemas.
 ### Call a Tool
 
 ```bash
-curl -X POST http://localhost:3000/mcp \
+curl -X POST http://localhost:9001/mcp \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc":"2.0",
     "id":3,
     "method":"tools/call",
     "params":{
-      "name":"calculate",
-      "arguments":{"operation":"add","a":5,"b":3}
+      "name":"pi_calc",
+      "arguments":{"decimals":10}
     }
   }'
 ```
@@ -70,50 +76,41 @@ curl -X POST http://localhost:3000/mcp \
 Tools can also be accessed directly via HTTP:
 
 ```bash
-curl -X POST http://localhost:3000/calculate \
-  -H "Content-Type: application/json" \
-  -d '{"operation":"multiply","a":6,"b":7}'
+curl http://localhost:9001/pi/calculate?decimals=50
 ```
 
 ## Available Tools
 
-### 1. calculate
-Performs basic arithmetic operations (add, subtract, multiply, divide)
+### pi_calc
+Computes the irrational number PI up to a given amount of digits using Machin's formula.
 
+**Input Schema:**
 ```json
 {
-  "name": "calculate",
-  "inputSchema": {
-    "operation": "add|subtract|multiply|divide",
-    "a": "number",
-    "b": "number"
+  "decimals": {
+    "type": "number",
+    "description": "The amount of decimals to compute",
+    "minimum": 3,
+    "maximum": 1000,
+    "default": 10
   }
 }
 ```
 
-### 2. transform_text
-Transforms text using various string operations
+**Example:**
+```bash
+# Via MCP
+curl -X POST http://localhost:9001/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":1,
+    "method":"tools/call",
+    "params":{"name":"pi_calc","arguments":{"decimals":20}}
+  }'
 
-```json
-{
-  "name": "transform_text",
-  "inputSchema": {
-    "text": "string",
-    "operation": "uppercase|lowercase|reverse|length"
-  }
-}
-```
-
-### 3. get_weather
-Gets mock weather information for a location
-
-```json
-{
-  "name": "get_weather",
-  "inputSchema": {
-    "location": "string"
-  }
-}
+# Via HTTP
+curl http://localhost:9001/pi/calculate?decimals=20
 ```
 
 ## Key Concepts
@@ -123,43 +120,50 @@ Gets mock weather information for a location
 ```typescript
 import { router as MCPRouter } from '@express-tools/mcp';
 
-const app = MCPRouter(express(), {
+const server = MCPRouter(express(), {
   serverInfo: {
-    name: 'my-server',
+    name: 'math_formulas',
     version: '1.0.0'
   },
-  basePath: '/mcp'  // JSON-RPC endpoint
+  basePath: '/mcp'  // JSON-RPC endpoint (default: '/mcp')
 });
 ```
 
 ### 2. Tool Definition
 
+Define MCP tools using the `definition` middleware. The same route handler serves both HTTP and MCP requests:
+
 ```typescript
-app.post('/calculate',
+server.get('/pi/calculate',
   definition({
-    name: 'calculate',
-    description: 'Performs arithmetic operations',
-    inputSchema: { /* JSON Schema */ },
-    outputSchema: { /* JSON Schema */ }
+    name: 'pi_calc',
+    description: 'Computes PI to N decimals',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        decimals: { type: 'number', minimum: 3, maximum: 1000 }
+      },
+      required: ['decimals']
+    }
   }),
-  (req, res) => { /* HTTP handler */ }
+  (req, res) => {
+    // Handler works for both HTTP and MCP calls
+    // MCP arguments are automatically mapped to req.params/req.body
+    const result = calculatePi(req.params.decimals);
+    res.json(result);
+  }
 );
 ```
 
-### 3. Custom MCP Handler
+### 3. Unified Handler Design
 
-```typescript
-definition({
-  name: 'my_tool',
-  inputSchema: { /* ... */ },
-  handler: async (args, req) => {
-    // Custom logic for MCP invocations
-    return result;
-  }
-})
-```
+**Key Feature:** One handler for both access methods
 
-The custom handler is called for MCP requests, while the route handler is used for direct HTTP requests.
+- **HTTP requests**: `req.params` and `req.body` work as normal
+- **MCP calls**: Tool arguments are automatically mapped to `req.body`
+- **Response**: `res.json()` works transparently for both protocols
+
+This means you don't need separate logic for HTTP vs MCP - write your handler once!
 
 ## MCP Protocol
 

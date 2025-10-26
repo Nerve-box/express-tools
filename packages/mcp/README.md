@@ -30,8 +30,6 @@ const server = MCPRouter(express(), {
     version: '1.0.0',
   },
   basePath: '/mcp', // Optional: defaults to '/mcp'
-  tools: [], // Optional: predefined tools
-  handlers: {}, // Optional: predefined handlers
 });
 ```
 
@@ -42,9 +40,9 @@ The MCP router automatically:
 
 ## Defining MCP Tools
 
-### Option 1: Using the definition middleware
+### Using the definition middleware
 
-The definition middleware enables you to expose Express routes as MCP tools:
+The definition middleware enables you to expose Express routes as MCP tools. The same route handler serves both standard HTTP requests and MCP tool calls:
 
 ```javascript
 server.post('/calculate', definition({
@@ -62,14 +60,7 @@ server.post('/calculate', definition({
     },
     required: ['operation', 'a', 'b'],
   },
-  outputSchema: {
-    type: 'object',
-    properties: {
-      type: { type: 'string' },
-      result: { type: 'number' },
-    },
-  },
-}), (req, res, next) => {
+}), (req, res) => {
   const { operation, a, b } = req.body;
   let result;
 
@@ -81,53 +72,15 @@ server.post('/calculate', definition({
   }
 
   res.json(result);
-  return next();
 });
 ```
 
-### Option 2: Providing tools upfront
+**How it works:**
 
-You can also define tools and handlers when initializing the router:
-
-```javascript
-const server = MCPRouter(express(), {
-  serverInfo: {
-    name: 'my-server',
-    version: '1.0.0',
-  },
-  tools: [
-    {
-      name: 'get_weather',
-      description: 'Gets current weather for a location',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          location: { type: 'string' },
-        },
-        required: ['location'],
-      },
-      outputSchema: {
-        type: 'object',
-        properties: {
-          type: { type: 'string' },
-          temperature: { type: 'number' },
-          conditions: { type: 'string' },
-        },
-      },
-    },
-  ],
-  handlers: {
-    get_weather: async (args, req) => {
-      // Your handler logic
-      const { location } = args;
-      return {
-        temperature: 72,
-        conditions: 'Sunny',
-      };
-    },
-  },
-});
-```
+- When called via **HTTP POST**, `req.body` contains the JSON payload
+- When called via **MCP**, the tool arguments are automatically mapped to `req.body`
+- The response from `res.json()` works for both HTTP and MCP calls
+- This unified approach means you write one handler for both access methods
 
 ## MCP Protocol
 
@@ -139,36 +92,67 @@ The router automatically handles the MCP protocol methods:
 
 All communication happens via JSON-RPC 2.0 over the configured endpoint.
 
-## Custom Handler
+### Example: Complete Server
 
-You can provide a custom handler in the definition that will be called instead of the route handler:
+Here's a complete example showing multiple tools:
 
 ```javascript
-server.post('/search', definition({
-  name: 'search',
-  description: 'Search through documents',
+import express from 'express';
+import { definition, router as MCPRouter } from '@express-tools/mcp';
+
+const server = MCPRouter(express(), {
+  serverInfo: {
+    name: 'my-tools-server',
+    version: '1.0.0',
+  },
+});
+
+// Math calculator tool
+server.post('/calculate', definition({
+  name: 'calculate',
+  description: 'Performs arithmetic calculations',
   inputSchema: {
     type: 'object',
     properties: {
-      query: { type: 'string' },
+      operation: { type: 'string', enum: ['add', 'subtract', 'multiply', 'divide'] },
+      a: { type: 'number' },
+      b: { type: 'number' },
     },
+    required: ['operation', 'a', 'b'],
   },
-  outputSchema: {
+}), (req, res) => {
+  const { operation, a, b } = req.body;
+  let result;
+
+  switch (operation) {
+    case 'add': result = a + b; break;
+    case 'subtract': result = a - b; break;
+    case 'multiply': result = a * b; break;
+    case 'divide': result = a / b; break;
+  }
+
+  res.json(result);
+});
+
+// Greeting tool
+server.post('/greet', definition({
+  name: 'greet',
+  description: 'Greets a person by name',
+  inputSchema: {
     type: 'object',
     properties: {
-      type: { type: 'string' },
-      results: { type: 'array' },
+      name: { type: 'string' },
     },
+    required: ['name'],
   },
-  handler: async (args, req) => {
-    // Custom logic that bypasses the route handler
-    const results = await searchDocuments(args.query);
-    return results;
-  },
-}), (req, res, next) => {
-  // This won't be called when invoked via MCP
-  res.json({ message: 'Use MCP to access this tool' });
-  return next();
+}), (req, res) => {
+  const { name } = req.body;
+  res.json(`Hello, ${name}!`);
+});
+
+server.listen(3000, () => {
+  console.log('MCP server running on http://localhost:3000');
+  console.log('MCP endpoint: http://localhost:3000/mcp');
 });
 ```
 

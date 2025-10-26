@@ -28,7 +28,7 @@ export interface JSONSchema {
  */
 export type MCPToolHandler<TArgs = Record<string, unknown>, TResult = unknown> = (
   args: TArgs,
-  req: Request
+  req: Request,
 ) => TResult | Promise<TResult>;
 
 /**
@@ -108,12 +108,6 @@ export interface MCPRequest extends Request {
    * @internal
    */
   _mcp?: MCPContext
-
-  /**
-   * The MCP operation ID for this request
-   * @internal
-   */
-  _MCPOperationId?: string
 }
 
 /**

@@ -1,7 +1,7 @@
 import express from 'express';
-import { definition, router as MCPRouter } from '../../src/index.ts';
-import * as PI from './pi/model.ts';
-import { calculate } from './pi/controller.ts';
+import { definition, router as MCPRouter } from '@express-tools/mcp/src/index';
+import * as PI from './pi/model';
+import { calculate } from './pi/controller';
 
 const server = MCPRouter(express(), {
   serverInfo: {

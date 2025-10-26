@@ -1,5 +1,6 @@
 import Express from 'express';
 import { JSONRPCServer } from 'json-rpc-2.0';
+import { deferred } from './utils';
 
 interface MCPRouter extends Express.Express {
   _mcp: {
@@ -52,16 +53,22 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
     expressApp._mcp.server.addMethod('tools/call', ({ name, arguments: args }, req) => {
       const outputType = expressApp._mcp.tools[name].outputSchema?.properties?.type?.type || 'text';
 
-      return Promise.resolve().then(() => {
-        return expressApp._mcp.handlers[name].call(null, args, req);
-      })
-        .then(data => ({ content: [{ type: outputType, [outputType]: data }] }));
+      const { promise, resolve } = deferred();
+      const payload = Object.assign(req || {}, { params: Object.assign(req.params, args) });
+      if (args.body) {
+        payload.body = args.body;
+        delete payload.params.body;
+      }
+
+      const response = expressApp._mcp.handlers[name].call(req, payload, { json: resolve });
+
+      return promise.then(data => ({ content: [{ type: outputType, [outputType]: data || response }] }));
     });
 
     // Scan routes for definition middleware
     for (let i = 0; i < stack.length; i++) {
       if (stack[i].route) {
-        const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle.MCPType === 'definition');
+        const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle['MCPType'] === 'definition');
         if (definitionPlugin) {
           const override = definitionPlugin.handle();
           const operationId = override && override.name;
@@ -81,6 +88,9 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
         else {
           res.sendStatus(204);
         }
+      }, (error) => {
+        res.sendStatus(500);
+        res.json({ error });
       });
     });
   }

@@ -5,6 +5,7 @@
       "checkJs": false,
       "esModuleInterop": true,
       "module": "nodenext",
+      "noCheck": true,
       "resolveJsonModule": true,
       "skipLibCheck": true,
       "skipDefaultLibCheck": true,

@@ -4,6 +4,9 @@ import jestConfig from 'eslint-plugin-jest';
 import spacing from '@stylistic/eslint-plugin';
 
 export default tseslint.config(
+  {
+    ignores: ['**/bin/**', '**/node_modules/**'],
+  },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   jestConfig.configs['flat/recommended'],
