@@ -6,10 +6,9 @@
 
 The goal of these plugins is to make it dead simple to add protocol interop on existing applications, reducing new-framework fatigue.
 
-- Plugin system to bridge [OpenAPI](./packages/oas/), [JSONRPC / MCP](), [GraphQL]() and others to your existing app.
+- Plugin system to bridge [OpenAPI](./packages/oas/), [JSONRPC / MCP](./packages/mcp/), [GraphQL]() and others to your existing app.
 - Auto-generated documentation endpoints.
 - Core utils for graceful shutdowns, healthcheck endpoints, etc.
-
 
 ## Contributing
 
@@ -26,33 +25,26 @@ A very special shoutout to [@drawm](https://github.com/drawm), [@mats852](https:
 
 ## Roadmap
 
-** Version 0.1.0 - Concepts **
-
-- [ ] Finish the conceptual design of common routers and align on global approach
-- [ ] Add examples for common routers
-- [ ] Write user stories to validate examples and design
-- [ ] Survey developers (interest, most anticipated routers, pain points, etc.)
-
-** Version 0.2.0 - Early router implementation **
-
-- [ ] First draft of prioritized routers
-  - [ ] OAS
+** Version 0.1.0 - Early router implementation **
+- [ ] First draft of selected routers 
+  - [X] OAS
   - [ ] JSON-RPC
   - [ ] GraphQL
   - [ ] Websockets
-  - [ ] Event-driven
-  - [ ] MCP
+  - [X] MCP
+- [ ] Add examples for common routers
+  - [X] OAS
+  - [ ] JSON-RPC
+  - [ ] GraphQL
+  - [ ] Websockets
+  - [X] MCP
+- [ ] Beta testing
+
+** Version 0.2.0 - Early tooling **
+
 - [ ] First draft of core helpers
   - [ ] Graceful shutdown
 
-** Version 0.3.0 - Validation **
-
-- [ ] Build testing and deployment systems
-- [ ] Establish bounds and rules (plugins per router, plugin compatibility, error handling)
-- [ ] Documentation
-- [ ] Types
-
-** Initial launch **
 
 ## License
 
