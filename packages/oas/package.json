@@ -16,41 +16,47 @@
         "definition",
         "schema"
     ],
-    "files": ["bin"],
+    "files": [
+        "bin",
+        "types.d.ts"
+    ],
     "dependencies": {
         "swagger-route-validator": "^3.1.0"
     },
     "devDependencies": {
-      "express": "^5.1.0",
-      "undici": "^7.16.0"
+        "express": "^5.1.0",
+        "undici": "^7.16.0"
     },
     "typings": "types.d.ts",
     "scripts": {
-        "build": "rm -rf ./bin && mkdir ./bin && tsc --project ./tsconfig.json && cp ./package.json ./bin/package.json && cp ./README.md ./bin/README.md && cp ./types.d.ts ./bin/types.d.ts",
+        "build": "rm -rf ./bin && mkdir ./bin && tsc --project ./tsconfig.json",
         "test:unit": "jest src/*",
         "test:integration": "jest tests/*",
         "test": "npm run test:unit && npm run test:integration",
         "prepublishOnly": "npm run build && cp ../../LICENSE ./LICENSE"
     },
     "homepage": "https://github.com/nerve-box/express-tools",
-  "contributors": [
-    "frederic charette <fredericcharette@gmail.com>"
-  ],
-  "bugs": {
-    "url": "https://github.com/nerve-box/express-tools/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "ssh://git@github.com/nerve-box/express-tools.git",
-    "directory": "packages/oas"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "transform": {
-      "^.+\\.m?[tj]sx?$": ["ts-jest", {
-        "diagnostics": false
-      }]
+    "contributors": [
+        "frederic charette <fredericcharette@gmail.com>"
+    ],
+    "bugs": {
+        "url": "https://github.com/nerve-box/express-tools/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/nerve-box/express-tools.git",
+        "directory": "packages/oas"
+    },
+    "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
+        "transform": {
+            "^.+\\.m?[tj]sx?$": [
+                "ts-jest",
+                {
+                    "diagnostics": false
+                }
+            ]
+        }
     }
-  }
 }
