@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.0.3] - HOTFIX
+
+commit [#]()
+
+### HOTFIX
+
+- Fixed built transpiled code to use .js extension.
+- Added check step in build pipeline to prevent issue again.
+
 ## [v0.0.2] - 2026-02-19
 
 commit [#]()

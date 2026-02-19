@@ -1,6 +1,6 @@
 {
     "name": "@express-tools/oas",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "OpenAPI plugin for express",
     "license": "Apache-2.0",
     "main": "bin/index.js",
@@ -31,7 +31,7 @@
     },
     "typings": "types.d.ts",
     "scripts": {
-        "build": "rm -rf ./bin && mkdir ./bin && tsc --project ./tsconfig.json",
+        "build": "rm -rf ./bin && mkdir ./bin && tsc --project ./tsconfig.json && find ./bin -name '*.js' -exec sed -i \"s/\\.ts'/\\.js'/g; s/\\.ts\\\"/\\.js\\\"/g\" {} \\;",
         "test:unit": "node --test src/*.test.ts",
         "test:integration": "node --test tests/integration/*.test.ts",
         "test": "npm run test:unit && npm run test:integration",
