@@ -1,7 +1,8 @@
+import { describe, test, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
 import express from 'express';
-import exampleSpec from '../static/exampleSpec';
-import { request } from 'undici';
-import { definition, documentation, response as OASResponse, router as OASRouter, validation } from '../../src';
+import exampleSpec from '../static/exampleSpec.ts';
+import { definition, documentation, response as OASResponse, router as OASRouter, validation } from '../../src/index.ts';
 
 describe('Basic express router', () => {
   let server;
@@ -20,32 +21,31 @@ describe('Basic express router', () => {
   });
 
   describe('with a non-augmented route', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo', (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/foo`);
-      const response = await body.json();
+      const req = await fetch(`http://localhost:${port}/foo`);
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
 
   describe('with an augmented route, passing the method object', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -63,26 +63,25 @@ describe('Basic express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/foo`);
-      const response = await body.json();
+      const req = await fetch(`http://localhost:${port}/foo`);
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
 
   describe('with an augmented route, passing the route object', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo', definition({ get: {
         description: 'Get a User by Id',
         parameters: [
@@ -100,26 +99,25 @@ describe('Basic express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/foo`);
-      const response = await body.json();
+      const req = await fetch(`http://localhost:${port}/foo`);
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
 
   describe('with validation', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -137,26 +135,25 @@ describe('Basic express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/foo/test`);
-      const response = await body.json();
+      const req = await fetch(`http://localhost:${port}/foo/test`);
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
 
   describe('with errored validation', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -174,21 +171,20 @@ describe('Basic express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should print a default html error page', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/foo/test`);
-      const response = await body.text();
+      const req = await fetch(`http://localhost:${port}/foo/test`);
+      const response = await req?.text();
 
-      expect(statusCode).toEqual(400);
-      expect(response).toEqual(`<!DOCTYPE html>
+      assert.strictEqual(req.status, 400);
+      assert.strictEqual(response, `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -203,7 +199,7 @@ describe('Basic express router', () => {
   });
 
   describe('description endpoint', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -224,22 +220,21 @@ describe('Basic express router', () => {
 
       server.get('/docs', documentation());
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should return a valid openapi spec that includes definition overrides', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/docs`);
+      const req = await fetch(`http://localhost:${port}/docs`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.paths['/foo/{id}']).toEqual({
+      assert.strictEqual(req.status, 200);
+      assert.deepStrictEqual(response.paths['/foo/{id}'], {
         get: {
           description: 'Get a User by Id',
           parameters: [
@@ -263,7 +258,7 @@ describe('Basic express router', () => {
   });
 
   describe('with response formatting on valid body', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -281,27 +276,26 @@ describe('Basic express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/foo/test`);
+      const req = await fetch(`http://localhost:${port}/foo/test`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response).toEqual({ id: 'test', name: 'bar', age: 99 });
+      assert.strictEqual(req.status, 200);
+      assert.deepStrictEqual(response, { id: 'test', name: 'bar', age: 99 });
     });
   });
 
   describe('with response formatting on invalid body', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -319,21 +313,20 @@ describe('Basic express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should return an error page', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/foo/test`);
-      const response = await body.text();
+      const req = await fetch(`http://localhost:${port}/foo/test`);
+      const response = await req?.text();
 
-      expect(statusCode).toEqual(422);
-      expect(response).toEqual(`<!DOCTYPE html>
+      assert.strictEqual(req.status, 422);
+      assert.strictEqual(response, `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">

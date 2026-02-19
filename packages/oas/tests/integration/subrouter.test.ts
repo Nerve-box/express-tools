@@ -1,6 +1,7 @@
+import { describe, test, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
 import express from 'express';
-import { request } from 'undici';
-import { definition, documentation, router as OASRouter, validation } from '../../src';
+import { definition, documentation, router as OASRouter, validation } from '../../src/index.ts';
 
 describe('Nested express router', () => {
   let server;
@@ -33,41 +34,38 @@ describe('Nested express router', () => {
   });
 
   describe('with a non-augmented route', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo', (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
       server.scan();
-      app = root.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = root.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200 when calling with the basepath', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/api/foo`);
-      const response = await body.json();
+      const req = await fetch(`http://localhost:${port}/api/foo`);
+      const response = await req.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
 
     test('should reply with a 404 when calling without the basepath', async () => {
-      const {
-        statusCode,
-      } = await request(`http://localhost:${port}/foo`);
+      const req = await fetch(`http://localhost:${port}/foo`);
 
-      expect(statusCode).toEqual(404);
+      assert.strictEqual(req.status, 404);
     });
   });
 
   describe('with an augmented route, passing the method object', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -86,26 +84,26 @@ describe('Nested express router', () => {
       });
 
       server.scan();
-      app = root.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = root.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/api/foo`);
+      const req = await fetch(`http://localhost:${port}/api/foo`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
+
   describe('with validation', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -124,26 +122,26 @@ describe('Nested express router', () => {
       });
 
       server.scan();
-      app = root.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = root.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/api/foo/test`);
+      const req = await fetch(`http://localhost:${port}/api/foo/test`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
+
   describe('description endpoint', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -165,22 +163,21 @@ describe('Nested express router', () => {
       server.get('/docs', documentation());
 
       server.scan();
-      app = root.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = root.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should return a valid openapi spec that includes definition overrides', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/api/docs`);
+      const req = await fetch(`http://localhost:${port}/api/docs`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response).toEqual({
+      assert.strictEqual(req.status, 200);
+      assert.deepStrictEqual(response, {
         basePath: '/api',
         components: {
           user: {
@@ -226,7 +223,6 @@ describe('Nested express router', () => {
         },
         servers: [],
         tags: [],
-
       });
     });
   });
@@ -246,40 +242,37 @@ describe('Flat express router', () => {
   });
 
   describe('with a non-augmented route', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/api/foo', (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200 when calling with the basepath', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/api/foo`);
-      const response = await body.json();
+      const req = await fetch(`http://localhost:${port}/api/foo`);
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
 
     test('should reply with a 404 when calling without the basepath', async () => {
-      const {
-        statusCode,
-      } = await request(`http://localhost:${port}/foo`);
+      const req = await fetch(`http://localhost:${port}/foo`);
 
-      expect(statusCode).toEqual(404);
+      assert.strictEqual(req.status, 404);
     });
   });
 
   describe('with an augmented route, passing the method object', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/api/foo', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -297,26 +290,26 @@ describe('Flat express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/api/foo`);
+      const req = await fetch(`http://localhost:${port}/api/foo`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
+
   describe('with validation', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/api/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -334,27 +327,26 @@ describe('Flat express router', () => {
         return next();
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should reply with a 200', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/api/foo/test`);
+      const req = await fetch(`http://localhost:${port}/api/foo/test`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response.data).toEqual('Hello world');
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(response.data, 'Hello world');
     });
   });
 
   describe('description endpoint', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/api/foo/bar/:id', definition({
         description: 'Get a User by Id',
         parameters: [
@@ -375,22 +367,21 @@ describe('Flat express router', () => {
 
       server.get('/docs', documentation());
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should return a valid openapi spec that includes definition overrides', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/docs`);
+      const req = await fetch(`http://localhost:${port}/docs`);
 
-      const response = await body.json();
+      const response = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(response).toEqual({
+      assert.strictEqual(req.status, 200);
+      assert.deepStrictEqual(response, {
         basePath: '/api',
         components: {},
         info: {},
@@ -419,8 +410,7 @@ describe('Flat express router', () => {
         },
         servers: [],
         tags: [],
-      },
-      );
+      });
     });
   });
 });

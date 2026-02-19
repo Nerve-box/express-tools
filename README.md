@@ -48,4 +48,4 @@ A very special shoutout to [@drawm](https://github.com/drawm), [@mats852](https:
 
 ## License
 
-Apache-2.0 - 2025
+Apache-2.0 - 2026

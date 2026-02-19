@@ -1,5 +1,5 @@
 import { expressRequestValidation } from 'swagger-route-validator';
-import { formatPathToOAS } from './utils';
+import { formatPathToOAS } from './utils.ts';
 
 export default function validate() {
   function OASValidation(req, res, next) {

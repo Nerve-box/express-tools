@@ -1,13 +1,13 @@
 {
     "name": "express-tools",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Enhances express APIs",
     "private": true,
     "workspaces": [
       "packages/*"
     ],
     "engines": {
-      "node": ">=14"
+      "node": ">=24"
     },
     "scripts": {
       "lint": "eslint --ext .ts .",
@@ -31,17 +31,15 @@
     },
     "homepage": "https://github.com/nerve-box/express-tools#readme",
     "devDependencies": {
-      "@stylistic/eslint-plugin": "^5.5.0",
+      "@stylistic/eslint-plugin": "^5.9.0",
       "@types/express": "^5.0.0",
-      "@types/jest": "^30.0.0",
-      "@types/node": "^24.9.0",
-      "eslint": "^9.38.0",
-      "eslint-plugin-jest": "^29.0.0",
+      "@types/node": "^25.3.0",
+      "@types/eslint": "^9.6.0",
+      "@typescript-eslint/eslint-plugin": "^8.56.0",
+		  "@typescript-eslint/parser": "^8.56.0",
+      "eslint": "^10.0.0",
       "husky": "^9.1.0",
-      "jest": "^30.2.0",
-      "ts-jest": "^29.4.0",
-      "typescript": "^5.9.0",
-      "typescript-eslint": "^8.46.0"
+      "typescript": "^5.9.0"
     }
   }
   

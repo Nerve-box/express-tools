@@ -1,6 +1,6 @@
-import { Express } from 'express';
-import { OpenApiSpecification } from 'swagger-route-validator';
-import { formatPathToOAS, mergeDefinitions } from './utils';
+import Express from 'express';
+import OpenApiSpecification from 'swagger-route-validator';
+import { formatPathToOAS, mergeDefinitions } from './utils.ts';
 
 interface OASRouter extends Express {
   scan?: () => void
@@ -46,7 +46,7 @@ export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
     // Scan routes for definition middleware
     for (let i = 0; i < stack.length; i++) {
       if (stack[i].route) {
-        const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle.OASType === 'definition');
+        const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle.name === 'OASDefinition');
         if (definitionPlugin) {
           const override = definitionPlugin.handle();
 
