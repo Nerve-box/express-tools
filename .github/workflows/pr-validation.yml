@@ -26,5 +26,7 @@ jobs:
         npm run lint
         npm run test
         npm run build
+        node  packages/oas/bin/index.js
+        node  packages/mcp/bin/index.js
       env:
         CI: true

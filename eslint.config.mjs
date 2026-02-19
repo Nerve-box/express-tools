@@ -4,6 +4,7 @@ import spacing from '@stylistic/eslint-plugin';
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
+  { ignores: ['**/bin/**'] },
   spacing.configs.recommended,
   {
     files: ['**/*.{js,ts,mjs}'],
