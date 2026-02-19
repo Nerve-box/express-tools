@@ -6,7 +6,7 @@ export default function response() {
     if (!req.route) throw new Error('Response validation middleware must be added to a route');
 
     let operationId = formatPathToOAS(req.route.path);
-    // substract spec basepath if exists
+    // subtract spec basePath if exists
     if (req._oas?.basePath && req._oas?.basePath !== '/' && operationId.indexOf(req._oas?.basePath) === 0) operationId = operationId.replace(req._oas?.basePath, '');
     const matchingSpec = req._oas?.paths?.[operationId]?.[req.method.toLowerCase()];
 

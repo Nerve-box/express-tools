@@ -25,7 +25,7 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
     server: new JSONRPCServer(),
   };
 
-  // Append config to request to prevent gymnastics
+  // Append config to request to avoid redundant lookups
   function MCPRouter(req, res, next) {
     req._mcp = expressApp['_mcp'];
     return next();

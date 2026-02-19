@@ -25,7 +25,7 @@ export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
   };
   mergeDefinitions(expressApp['_oas'], spec);
 
-  // Append config to request to prevent gymnastics
+  // Append config to request to avoid redundant lookups
   function OASRouter(req, res, next) {
     req._oas = expressApp['_oas'];
     return next();
@@ -52,7 +52,7 @@ export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
 
           let operationId = stack[i].route.path;
 
-          // substract spec baspath if exists
+          // subtract spec basePath if exists
           if (spec.basePath && spec.basePath !== '/' && operationId.indexOf(expressApp.mountpath) === 0) operationId = operationId.replace(expressApp.mountpath, '');
 
           // Check if path level or method level

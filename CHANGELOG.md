@@ -6,7 +6,7 @@ commit [#]()
 
 ### Minor changes
 
-- Bumbed dependencies.
+- Bumped dependencies.
 - Removed undici in favor of built-in fetch and jest in favor of built-in test runner.
 
 ### Bug fixes
