@@ -1,6 +1,6 @@
 {
     "name": "@express-tools/mcp",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "MCP plugin for express",
     "license": "Apache-2.0",
     "main": "bin/index.js",
@@ -16,6 +16,9 @@
         "definition",
         "schema"
     ],
+    "engines": {
+      "node": ">=24"
+    },
     "files": [
         "bin",
         "types.d.ts"
@@ -24,14 +27,13 @@
         "json-rpc-2.0": "^1.7.0"
     },
     "devDependencies": {
-        "express": "^5.1.0",
-        "undici": "^7.16.0"
+        "express": "^5.2.0"
     },
     "typings": "types.d.ts",
     "scripts": {
         "build": "rm -rf ./bin && mkdir ./bin && tsc --project ./tsconfig.json",
-        "test:unit": "jest src/*",
-        "test:integration": "jest tests/*",
+        "test:unit": "node --test src/*.test.ts",
+        "test:integration": "node --test tests/integration/*.test.ts",
         "test": "npm run test:unit && npm run test:integration",
         "prepublishOnly": "npm run build && cp ../../LICENSE ./LICENSE"
     },
@@ -46,17 +48,5 @@
         "type": "git",
         "url": "git+ssh://git@github.com/nerve-box/express-tools.git",
         "directory": "packages/mcp"
-    },
-    "jest": {
-        "preset": "ts-jest",
-        "testEnvironment": "node",
-        "transform": {
-            "^.+\\.m?[tj]sx?$": [
-                "ts-jest",
-                {
-                    "diagnostics": false
-                }
-            ]
-        }
     }
 }

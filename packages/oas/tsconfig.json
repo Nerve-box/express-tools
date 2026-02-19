@@ -12,7 +12,6 @@
       "isolatedModules": true,
       "target": "ES2022",
       "types": [
-        "jest",
         "node"
       ],
       "outDir": "./bin",

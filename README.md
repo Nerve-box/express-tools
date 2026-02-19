@@ -17,7 +17,7 @@ If you want to contribute, feel free to ping @fed135.
 
 ## Special thanks
 
-The concept, which is not new and has been attempted a few times- even by myself has been thouroughly battle-tested over the last decade.
+The concept, which is not new and has been attempted a few times- even by myself has been thoroughly battle-tested over the last decade.
 
 I want to give credit to Fastify and other frameworks for the inspiration.
 
@@ -48,4 +48,4 @@ A very special shoutout to [@drawm](https://github.com/drawm), [@mats852](https:
 
 ## License
 
-Apache-2.0 - 2025
+Apache-2.0 - 2026

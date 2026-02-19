@@ -1,6 +1,6 @@
 import Express from 'express';
 import { JSONRPCServer } from 'json-rpc-2.0';
-import { deferred } from './utils';
+import { deferred } from './utils.ts';
 
 interface MCPRouter extends Express.Express {
   _mcp: {
@@ -25,7 +25,7 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
     server: new JSONRPCServer(),
   };
 
-  // Append config to request to prevent gymnastics
+  // Append config to request to avoid redundant lookups
   function MCPRouter(req, res, next) {
     req._mcp = expressApp['_mcp'];
     return next();
@@ -68,7 +68,7 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
     // Scan routes for definition middleware
     for (let i = 0; i < stack.length; i++) {
       if (stack[i].route) {
-        const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle['MCPType'] === 'definition');
+        const definitionPlugin = stack[i].route.stack.find(middleware => middleware.handle.name === 'MCPDefinition');
         if (definitionPlugin) {
           const override = definitionPlugin.handle();
           const operationId = override && override.name;

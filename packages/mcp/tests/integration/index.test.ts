@@ -1,6 +1,7 @@
+import { describe, test, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
 import express from 'express';
-import { request } from 'undici';
-import { router, definition } from '../../src/index';
+import { router, definition } from '../../src/index.ts';
 
 describe('MCP Integration Tests', () => {
   let server;
@@ -26,18 +27,17 @@ describe('MCP Integration Tests', () => {
   });
 
   describe('initialize', () => {
-    beforeEach((done) => {
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+    beforeEach(async () => {
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should return protocol version and server info', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/mcp`, {
+      const req = await fetch(`http://localhost:${port}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -48,10 +48,10 @@ describe('MCP Integration Tests', () => {
         }),
       });
 
-      const data = await body.json();
+      const data = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(data).toEqual({
+      assert.strictEqual(req.status, 200);
+      assert.deepStrictEqual(data, {
         jsonrpc: '2.0',
         id: 1,
         result: {
@@ -72,7 +72,7 @@ describe('MCP Integration Tests', () => {
   });
 
   describe('tools/list', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.post('/calculate', definition({
         name: 'calculate',
         description: 'Performs arithmetic calculations',
@@ -110,17 +110,16 @@ describe('MCP Integration Tests', () => {
         res.json({ greeting: 'Hello!' });
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should return all registered tools', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/mcp`, {
+      const req = await fetch(`http://localhost:${port}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -131,29 +130,29 @@ describe('MCP Integration Tests', () => {
         }),
       });
 
-      const data = await body.json();
+      const data = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(data.jsonrpc).toEqual('2.0');
-      expect(data.id).toEqual(2);
-      expect(data.result).toBeDefined();
-      expect(data.result.tools).toBeInstanceOf(Array);
-      expect(data.result.tools.length).toEqual(2);
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(data.jsonrpc, '2.0');
+      assert.strictEqual(data.id, 2);
+      assert.ok(data.result !== undefined);
+      assert.ok(data.result.tools instanceof Array);
+      assert.strictEqual(data.result.tools.length, 2);
 
       const toolNames = data.result.tools.map(t => t.name);
-      expect(toolNames).toContain('calculate');
-      expect(toolNames).toContain('greet');
+      assert.ok(toolNames.includes('calculate'));
+      assert.ok(toolNames.includes('greet'));
 
       const calculateTool = data.result.tools.find(t => t.name === 'calculate');
-      expect(calculateTool).toBeDefined();
-      expect(calculateTool.description).toEqual('Performs arithmetic calculations');
-      expect(calculateTool.inputSchema).toBeDefined();
-      expect(calculateTool.outputSchema).toBeDefined();
+      assert.ok(calculateTool !== undefined);
+      assert.strictEqual(calculateTool.description, 'Performs arithmetic calculations');
+      assert.ok(calculateTool.inputSchema !== undefined);
+      assert.ok(calculateTool.outputSchema !== undefined);
     });
   });
 
   describe('tools/call', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.post('/calculate', definition({
         name: 'calculate',
         description: 'Performs arithmetic calculations',
@@ -194,17 +193,16 @@ describe('MCP Integration Tests', () => {
         res.json(result);
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should execute tool via MCP', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/mcp`, {
+      const req = await fetch(`http://localhost:${port}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,16 +222,16 @@ describe('MCP Integration Tests', () => {
         }),
       });
 
-      const data = await body.json();
+      const data = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(data.jsonrpc).toEqual('2.0');
-      expect(data.id).toEqual(3);
-      expect(data.result).toBeDefined();
-      expect(data.result.content).toBeInstanceOf(Array);
-      expect(data.result.content.length).toEqual(1);
-      expect(data.result.content[0].type).toEqual('text');
-      expect(data.result.content[0].text).toEqual(8);
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(data.jsonrpc, '2.0');
+      assert.strictEqual(data.id, 3);
+      assert.ok(data.result !== undefined);
+      assert.ok(data.result.content instanceof Array);
+      assert.strictEqual(data.result.content.length, 1);
+      assert.strictEqual(data.result.content[0].type, 'text');
+      assert.strictEqual(data.result.content[0].text, 8);
     });
 
     test('should execute tool with different operations', async () => {
@@ -244,9 +242,7 @@ describe('MCP Integration Tests', () => {
       ];
 
       for (const testCase of testCases) {
-        const {
-          body,
-        } = await request(`http://localhost:${port}/mcp`, {
+        const req = await fetch(`http://localhost:${port}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -260,16 +256,13 @@ describe('MCP Integration Tests', () => {
           }),
         });
 
-        const data = await body.json();
-        expect(data.result.content[0].text).toEqual(testCase.expected);
+        const data = await req?.json();
+        assert.strictEqual(data.result.content[0].text, testCase.expected);
       }
     });
 
     test('should allow HTTP access to the same route', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/calculate`, {
+      const req = await fetch(`http://localhost:${port}/calculate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -279,53 +272,51 @@ describe('MCP Integration Tests', () => {
         }),
       });
 
-      const data = await body.json();
+      const data = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(data).toEqual(15);
+      assert.strictEqual(req.status, 200);
+      assert.strictEqual(data, 15);
     });
   });
 
   describe('non-MCP routes', () => {
-    beforeEach((done) => {
+    beforeEach(async () => {
       server.get('/health', (req, res) => {
         res.json({ status: 'healthy' });
       });
 
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should still work as regular Express routes', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/health`, {
+      const req = await fetch(`http://localhost:${port}/health`, {
         method: 'GET',
       });
 
-      const data = await body.json();
+      const data = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(data).toEqual({ status: 'healthy' });
+      assert.strictEqual(req.status, 200);
+      assert.deepStrictEqual(data, { status: 'healthy' });
     });
   });
 
   describe('error handling', () => {
-    beforeEach((done) => {
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+    beforeEach(async () => {
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should handle invalid JSON-RPC requests', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/mcp`, {
+      const req = await fetch(`http://localhost:${port}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -335,16 +326,16 @@ describe('MCP Integration Tests', () => {
         }),
       });
 
-      const data = await body.json();
+      const data = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(data.error).toBeDefined();
+      assert.strictEqual(req.status, 200);
+      assert.ok(data.error !== undefined);
     });
 
     test('should return 204 for JSON-RPC notifications', async () => {
       const {
-        statusCode,
-      } = await request(`http://localhost:${port}/mcp`, {
+        status,
+      } = await fetch(`http://localhost:${port}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -355,23 +346,22 @@ describe('MCP Integration Tests', () => {
         }),
       });
 
-      expect(statusCode).toEqual(204);
+      assert.strictEqual(status, 204);
     });
   });
 
   describe('custom basePath', () => {
-    beforeEach((done) => {
-      app = server.listen(port, (err) => {
-        if (err) throw err;
-        done();
+    beforeEach(async () => {
+      await new Promise<void>((resolve, reject) => {
+        app = server.listen(port, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
     });
 
     test('should be accessible at the configured basePath', async () => {
-      const {
-        statusCode,
-        body,
-      } = await request(`http://localhost:${port}/mcp`, {
+      const req = await fetch(`http://localhost:${port}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -382,10 +372,10 @@ describe('MCP Integration Tests', () => {
         }),
       });
 
-      const data = await body.json();
+      const data = await req?.json();
 
-      expect(statusCode).toEqual(200);
-      expect(data.result).toBeDefined();
+      assert.strictEqual(req.status, 200);
+      assert.ok(data.result !== undefined);
     });
   });
 });
