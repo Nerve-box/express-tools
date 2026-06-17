@@ -6,26 +6,26 @@
 
 Express-tools is a suite of protocol interop plugins for the [express](https://expressjs.com/en/) web framework.
 
-Because express and express-like routing has been around for over 15 years and currently holds [over 7% of the web frameworks market share], there are a good number of potentially older live services that could be too fragile to migrate to something newer if the owners suddently wanted to add MCP support. 
+Because Express and Express-like routing has been around for over 15 years and currently holds [over 7% of the web frameworks market share], there are a good number of potentially older live services that could be too fragile to migrate to something newer if the owners suddenly wanted to add MCP support. 
 
-The plugin system of Express-tools doesn't wrap, overload or play with any express internals and works on both legacy express (pre-5.x) and the current LTS. This ensures that existing business logic remains unaffected.
+The plugin system of Express-tools doesn't wrap, overload, or play with any Express internals and works on both legacy Express (pre-5.x) and the current LTS. This ensures that existing business logic remains unaffected.
 
 No new framework to learn, no monkey patching. 
 
-The goal of these plugins is to make it dead simple to add protocol interop on existing applications, reducing new-framework fatigue.
+The goal of these plugins is to make it dead simple to add protocol interop to existing applications, reducing new-framework fatigue.
 
 Important disclaimer: We are not associated in any way with the core Express team.
 
 
 ## Examples
 
-### Moving from static json/yaml OpenApi specs to dynamically generated docs that live with the code.
+### Moving from static json/yaml OpenAPI specs to dynamically generated docs that live with the code.
 
-A common scenario when working with API gateways is that you feed them statically generated API defintions. This causes friction in development and can result in drifting. The language for these definitions is disconnected from any intellisense or validation.
+A common scenario when working with API gateways is that you feed them statically generated API definitions. This causes friction in development and can result in drifting. The language for these definitions is disconnected from any intellisense or validation.
 
 Larger APIs also deal with massive definition files and must repeat common responses, headers, etc. multiple times.
 
-By defining routes as plain objects in the code we gain insight from intellisense and can leverage [@express-tool/oas](./packages/oas/) to create a documentation route which dynamically outputs the API definition.
+By defining routes as plain objects in the code, we gain insight from intellisense and can leverage [@express-tool/oas](./packages/oas/) to create a documentation route which dynamically outputs the API definition.
 
 ```javascript
 
@@ -57,17 +57,17 @@ server.get('/openapi.json', documentation());
 
 ```
 
-In this example, we took an existing express app with a `GET /user/:id` route and added the `server.use(OASRouter(...))` to initialize the OpenApi router. Then, we added a `definition` middleware to the `GET /user/:id` route. Finally, we created a new route to print out the spec.
+In this example, we took an existing Express app with a `GET /user/:id` route and added the `server.use(OASRouter(...))` to initialize the OpenAPI router. Then, we added a `definition` middleware to the `GET /user/:id` route. Finally, we created a new route to print out the spec.
 
 Now, instead of feeding a static spec to our API gateway, it can be fetched dynamically from the API itself.
 
 ### Adding MCP support to a legacy Express app
 
-Assuming that you have a legacy web service that connects to a database or performs some sort of compute which would be useful for an LLM to have as a tool, the current approach is to develop a secondary service using one of many bespoke standalone frameworks which communicates with you legacy service. 
+Assuming that you have a legacy web service that connects to a database or performs some sort of compute which would be useful for an LLM to have as a tool, the current approach is to develop a secondary service using one of many bespoke standalone frameworks which communicates with your legacy service. 
 
-Not only is this wasteful, but also introduces new potential points of failure, attack surface, etc. You may be re-writing a lot of authentication flows, creating exceptions for LLM tool calling, etc.
+Not only is this wasteful, but it also introduces new potential points of failure, attack surface, etc. You may be re-writing a lot of authentication flows, creating exceptions for LLM tool calling, etc.
 
-[@express-tools/mcp](./packages/mcp/) is a plugin that allows you to reuse your existing app and endpoints as mcp tools.
+[@express-tools/mcp](./packages/mcp/) is a plugin that allows you to reuse your existing app and endpoints as MCP tools.
 
 ```javascript
 import Express from 'express';
@@ -113,7 +113,7 @@ server.post('/calculate', definition({
 });
 ```
 
-In this example, our legacy app has one endpoint: `/calculate`. Under the hood, adding the `MCPRouter` pluging to our express app spins up a JSON-RPC and binds it to the route `/mcp`. Invoking the `definition` middleware creates a tool definition internally. 
+In this example, our legacy app has one endpoint: `/calculate`. Under the hood, adding the `MCPRouter` plugin to our Express app spins up a JSON-RPC server and binds it to the route `/mcp`. Invoking the `definition` middleware creates a tool definition internally. 
 
 Now, LLMs can connect to the API directly via the `/mcp` endpoint.
 

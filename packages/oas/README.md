@@ -6,7 +6,7 @@
 - Request/response validation
 - Dynamically generated documentation 
 - Define or redefine as much of your spec 
-- Supports OpenApi 2.x, 3.x
+- Supports OpenAPI 2.x, 3.x
 
 ## Getting started
 
