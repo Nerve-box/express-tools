@@ -2,6 +2,8 @@
 
 *Bring your Express API to the modern web*
 
+Expose existing Express routes as MCP tools with no handler changes.
+
 - Express 5 compatible
 - Model Context Protocol (MCP) support via JSON-RPC 2.0
 - Expose your Express routes as AI-accessible tools
@@ -24,13 +26,14 @@ import Express from 'express';
 import { definition, router as MCPRouter } from '@express-tools/mcp';
 
 // Wraps an existing Express app and adds MCP protocol support
-const server = MCPRouter(express(), {
+const server = express();
+
+server.use('/mcp', MCPRouter({
   serverInfo: {
     name: 'my-express-server',
     version: '1.0.0',
   },
-  basePath: '/mcp', // Optional: defaults to '/mcp'
-});
+}));
 ```
 
 The MCP router automatically:
@@ -100,12 +103,14 @@ Here's a complete example showing multiple tools:
 import express from 'express';
 import { definition, router as MCPRouter } from '@express-tools/mcp';
 
-const server = MCPRouter(express(), {
+const server = express();
+
+server.use('/mcp', MCPRouter({
   serverInfo: {
     name: 'my-tools-server',
     version: '1.0.0',
   },
-});
+}));
 
 // Math calculator tool
 server.post('/calculate', definition({
@@ -163,4 +168,4 @@ If you want to contribute, feel free to ping @fed135.
 
 ## License
 
-Apache-2.0 - 2025
+Apache-2.0 - 2026

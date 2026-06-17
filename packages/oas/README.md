@@ -6,6 +6,7 @@
 - Request/response validation
 - Dynamically generated documentation 
 - Define or redefine as much of your spec 
+- Supports OpenApi 2.x, 3.x
 
 ## Getting started
 
@@ -23,14 +24,15 @@ Add the plugin to your express app:
 import Express from 'express';
 import {definition, documentation, response, router as OASRouter, validation} from '@express-tools/oas';
 
-// Wraps an existing API router or subrouter and adds an OpenAPI spec
-const server = OASRouter(express(), {
-  /* An OpenAPI spec */
+const server = express();
+
+server.use(OASRouter({
+  /* An OpenAPI spec JSON Object*/
 });
 
 ```
 
-The definition middleware enables you to define or override the properties of a route
+The definition middleware enables you to define or override the definition of a route in your spec.
 
 ```javascript
 
@@ -50,7 +52,7 @@ server.get('/user/:id', definition({
 
 ```
 
-The validation middleware checks the request to make sure it matches the spec and overrides.
+The validation middleware uses the fast [swagger-route-validator](https://github.com/fed135/swagger-route-validator) to check that the request matches the spec and overrides.
 
 ```javascript
 
@@ -61,7 +63,7 @@ server.post(
 
 ```
 
-The response middleware adds response validation to your route
+The response middleware adds response validation to your route, just before writing to the socket.
 
 ```javascript
 
@@ -85,11 +87,11 @@ server.post(
 
 ```
 
-The documentation plugin prints out your spec and all overrides
+The documentation plugin prints out your spec and all overrides as JSON
 
 ```javascript
 
-server.get('/docs', documentation());
+server.get('/openapi.json', documentation());
 
 ```
 
@@ -100,4 +102,4 @@ If you want to contribute, feel free to ping @fed135.
 
 ## License
 
-Apache-2.0 - 2025
+Apache-2.0 - 2026
