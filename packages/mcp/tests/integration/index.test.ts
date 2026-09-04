@@ -7,10 +7,13 @@ describe('MCP Integration Tests', () => {
   let server;
   let app;
   let port;
+  let MCP;
 
   beforeEach(() => {
     port = 10000 + Math.round(Math.random() * 10000);
-    server = router(express(), {
+    app = express();
+    app.use(express.json());
+    MCP = router(app, {
       serverInfo: {
         name: 'test-mcp-server',
         version: '1.0.0',
@@ -21,15 +24,18 @@ describe('MCP Integration Tests', () => {
   });
 
   afterEach(() => {
-    if (app) app.close();
+    if (server) server.close();
     server = null;
     app = null;
+    MCP = null;
   });
 
   describe('initialize', () => {
     beforeEach(async () => {
+      MCP.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -73,7 +79,7 @@ describe('MCP Integration Tests', () => {
 
   describe('tools/list', () => {
     beforeEach(async () => {
-      server.post('/calculate', definition({
+      app.post('/calculate', definition({
         name: 'calculate',
         description: 'Performs arithmetic calculations',
         inputSchema: {
@@ -96,7 +102,7 @@ describe('MCP Integration Tests', () => {
         res.json({ httpEndpoint: true });
       });
 
-      server.post('/greet', definition({
+      app.post('/greet', definition({
         name: 'greet',
         description: 'Greets a person',
         inputSchema: {
@@ -110,8 +116,10 @@ describe('MCP Integration Tests', () => {
         res.json({ greeting: 'Hello!' });
       });
 
+      MCP.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -153,7 +161,7 @@ describe('MCP Integration Tests', () => {
 
   describe('tools/call', () => {
     beforeEach(async () => {
-      server.post('/calculate', definition({
+      app.post('/calculate', definition({
         name: 'calculate',
         description: 'Performs arithmetic calculations',
         inputSchema: {
@@ -193,8 +201,10 @@ describe('MCP Integration Tests', () => {
         res.json(result);
       });
 
+      MCP.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -281,12 +291,14 @@ describe('MCP Integration Tests', () => {
 
   describe('non-MCP routes', () => {
     beforeEach(async () => {
-      server.get('/health', (req, res) => {
+      app.get('/health', (req, res) => {
         res.json({ status: 'healthy' });
       });
 
+      MCP.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -307,8 +319,10 @@ describe('MCP Integration Tests', () => {
 
   describe('error handling', () => {
     beforeEach(async () => {
+      MCP.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -352,8 +366,10 @@ describe('MCP Integration Tests', () => {
 
   describe('custom basePath', () => {
     beforeEach(async () => {
+      MCP.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });

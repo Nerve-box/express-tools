@@ -4,7 +4,7 @@
 
 Expose existing Express routes as MCP tools with no handler changes.
 
-- Express 5 compatible
+- Express 5 compatible - no wrappers or monkey-patching
 - Model Context Protocol (MCP) support via JSON-RPC 2.0
 - Expose your Express routes as AI-accessible tools
 - Automatic tool registration and discovery
@@ -25,21 +25,22 @@ Add the MCP router to your express app:
 import Express from 'express';
 import { definition, router as MCPRouter } from '@express-tools/mcp';
 
-// Wraps an existing Express app and adds MCP protocol support
 const server = express();
 
-server.use('/mcp', MCPRouter({
+// Creates an MCP server
+const MCP = MCPRouter(server, {
   serverInfo: {
     name: 'my-express-server',
     version: '1.0.0',
   },
-}));
+  basePath: '/mcp',
+});
 ```
 
 The MCP router automatically:
 - Sets up a JSON-RPC 2.0 endpoint at the specified `basePath` (default: `/mcp`)
 - Implements the MCP protocol methods: `initialize`, `tools/list`, `tools/call`
-- Scans your routes for MCP tool definitions
+- Scans your routes for MCP tool definitions on `compile()`
 
 ## Defining MCP Tools
 
@@ -105,12 +106,13 @@ import { definition, router as MCPRouter } from '@express-tools/mcp';
 
 const server = express();
 
-server.use('/mcp', MCPRouter({
+const MCP = MCPRouter(server, {
   serverInfo: {
     name: 'my-tools-server',
     version: '1.0.0',
   },
-}));
+  basePath: '/mcp',
+});
 
 // Math calculator tool
 server.post('/calculate', definition({
@@ -154,6 +156,8 @@ server.post('/greet', definition({
   const { name } = req.body;
   res.json(`Hello, ${name}!`);
 });
+
+compile(server);
 
 server.listen(3000, () => {
   console.log('MCP server running on http://localhost:3000');

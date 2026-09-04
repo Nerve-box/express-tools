@@ -2,7 +2,7 @@
 
 *Bring your Express API to the modern web*
 
-- Express 5 compatible 
+- Express 5 compatible - no wrappers or monkey-patching
 - Request/response validation
 - Dynamically generated documentation 
 - Define or redefine as much of your spec 
@@ -22,15 +22,22 @@ Add the plugin to your express app:
 ```javascript
 
 import Express from 'express';
-import {definition, documentation, response, router as OASRouter, validation} from '@express-tools/oas';
+import {definition, router as OASRouter} from '@express-tools/oas';
 
 const server = express();
 
-server.use(OASRouter({
+const OAS = OASRouter(server, {
   /* An OpenAPI spec JSON Object*/
 });
 
+// Route definitions...
+
+OAS.compile();
+server.listen(3000);
+
 ```
+
+Before calling `listen` on your Express server you need to `compile` your routes.
 
 The definition middleware enables you to define or override the definition of a route in your spec.
 
@@ -50,15 +57,16 @@ server.get('/user/:id', definition({
   },
 }), (req, res, next) => { /* Your business logic handler */ });
 
+
 ```
 
-The validation middleware uses the fast [swagger-route-validator](https://github.com/fed135/swagger-route-validator) to check that the request matches the spec and overrides.
+The validation middleware uses the fast [swagger-route-validator](https://github.com/fed135/swagger-route-validator) to check that the request matches the spec and overrides. 
 
 ```javascript
 
 server.post(
   '/user',
-  validation(),
+  OAS.validation,
   (req, res, next) => { /* Your business logic handler */ });
 
 ```
@@ -82,7 +90,7 @@ server.post(
       default: { schema: { $ref: 'user' } },
     },
   }),
-  response(),
+  OAS.response,
   (req, res, next) => { /* Your business logic handler */ });
 
 ```
@@ -91,7 +99,7 @@ The documentation plugin prints out your spec and all overrides as JSON
 
 ```javascript
 
-server.get('/openapi.json', documentation());
+server.get('/openapi.json', OAS.documentation);
 
 ```
 

@@ -12,7 +12,7 @@
  */
 
 import express from 'express';
-import { definition, documentation, response, router as OASRouter, validation } from '@express-tools/oas';
+import { definition, router as OASRouter } from '@express-tools/oas';
 
 // Define the OpenAPI specification
 const apiSpec = {
@@ -45,7 +45,8 @@ const apiSpec = {
 };
 
 // Initialize OAS-enhanced Express app
-const app = OASRouter(express(), apiSpec);
+const app = express();
+const OAS = OASRouter(app, apiSpec);
 
 // Simple in-memory user store
 const users: Record<string, { id: string, name: string, email: string, age?: number }> = {
@@ -68,7 +69,7 @@ app.get('/users',
       },
     },
   }),
-  response(),
+  OAS.response,
   (req, res) => {
     res.json(Object.values(users));
   },
@@ -99,8 +100,8 @@ app.get('/users/:id',
       },
     },
   }),
-  validation(),
-  response(),
+  OAS.validation,
+  OAS.response,
   (req, res) => {
     const user = users[req.params.id];
     if (!user) {
@@ -142,8 +143,8 @@ app.post('/users',
       },
     },
   }),
-  validation(),
-  response(),
+  OAS.validation,
+  OAS.response,
   (req, res) => {
     const id = String(Object.keys(users).length + 1);
     const newUser = { id, ...req.body };
@@ -153,7 +154,7 @@ app.post('/users',
 );
 
 // GET /docs - OpenAPI documentation endpoint
-app.get('/docs', documentation());
+app.get('/docs', OAS.documentation);
 
 // Start the server
 const PORT = 3000;

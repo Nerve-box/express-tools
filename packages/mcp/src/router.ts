@@ -2,21 +2,15 @@ import Express from 'express';
 import { JSONRPCServer } from 'json-rpc-2.0';
 import { deferred } from './utils.ts';
 
-interface MCPRouter extends Express.Express {
-  _mcp: {
-    tools: { [name: string]: any }
-    handlers: { [name: string]: any }
-    server: JSONRPCServer
-  }
+interface MCPRouter {
+  compile: () => void
 }
 
-export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
+export default function router(expressApp: Express.Application, spec = {}): MCPRouter {
   if (!spec.serverInfo) throw new Error('serverInfo is missing from MCP config.');
 
-  let scanned: boolean = false;
-
-  // Store a working copy of the spec in express app
-  expressApp['_mcp'] = {
+  // Internal state
+  const state = {
     tools: (spec.tools || []).reduce((acc, curr) => {
       acc[curr.name] = curr;
       return acc;
@@ -25,22 +19,10 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
     server: new JSONRPCServer(),
   };
 
-  // Append config to request to avoid redundant lookups
-  function MCPRouter(req, res, next) {
-    req._mcp = expressApp['_mcp'];
-    return next();
-  }
-  MCPRouter.MCPType = 'router';
-  expressApp.use(Express.json());
-  expressApp.use(MCPRouter);
-
-  function initMCPRouter() {
-    if (scanned) throw new Error('MCP Router has already scanned for routes. Make sure it is only invoked once.');
-    scanned = true;
-
+  function compile() {
     const stack = expressApp.stack || expressApp.router.stack;
 
-    expressApp._mcp.server.addMethod('initialize', () => ({
+    state.server.addMethod('initialize', () => ({
       protocolVersion: '2024-11-05',
       capabilities: {
         tools: {
@@ -49,18 +31,20 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
       },
       serverInfo: spec.serverInfo,
     }));
-    expressApp._mcp.server.addMethod('tools/list', () => ({ tools: Object.values(expressApp._mcp.tools) }));
-    expressApp._mcp.server.addMethod('tools/call', ({ name, arguments: args }, req) => {
-      const outputType = expressApp._mcp.tools[name].outputSchema?.properties?.type?.type || 'text';
+    state.server.addMethod('tools/list', () => ({ tools: Object.values(state.tools) }));
+    state.server.addMethod('tools/call', ({ name, arguments: args }, req) => {
+      const outputType = state.tools[name].outputSchema?.properties?.type?.type || 'text';
 
       const { promise, resolve } = deferred();
-      const payload = Object.assign(req || {}, { params: Object.assign(req.params, args) });
+      const payload = { params: Object.assign({}, req.params, args), query: Object.assign({}, req.query, args), headers: req.headers };
       if (args.body) {
         payload.body = args.body;
         delete payload.params.body;
       }
 
-      const response = expressApp._mcp.handlers[name].call(req, payload, { json: resolve });
+      const mockedRes = { json: resolve, end: resolve };
+      mockedRes.status = () => mockedRes;
+      const response = state.handlers[name].call(req, payload, mockedRes);
 
       return promise.then(data => ({ content: [{ type: outputType, [outputType]: data || response }] }));
     });
@@ -73,38 +57,27 @@ export default function router(expressApp: MCPRouter, spec = {}): MCPRouter {
           const override = definitionPlugin.handle();
           const operationId = override && override.name;
 
-          expressApp['_mcp'].tools[operationId] = override;
-          expressApp['_mcp'].handlers[operationId] = override.handler || stack[i].route.stack.at(-1).handle;
+          state.tools[operationId] = override;
+          state.handlers[operationId] = override.handler || stack[i].route.stack.at(-1).handle;
         }
       }
     }
+  }
 
-    expressApp.post(spec.basePath || '/mcp', (req, res) => {
-      const jsonRPCRequest = req.body;
-      expressApp._mcp.server.receive(jsonRPCRequest, req).then((jsonRPCResponse) => {
-        if (jsonRPCResponse) {
-          res.json(jsonRPCResponse);
-        }
-        else {
-          res.sendStatus(204);
-        }
-      }, (error) => {
-        res.sendStatus(500);
-        res.json({ error });
-      });
+  expressApp.post(spec.basePath || '/mcp', Express.json(), (req, res) => {
+    const jsonRPCRequest = req.body;
+    state.server.receive(jsonRPCRequest, req).then((jsonRPCResponse) => {
+      if (jsonRPCResponse) {
+        res.json(jsonRPCResponse);
+      }
+      else {
+        res.sendStatus(204);
+      }
+    }, (error) => {
+      res.sendStatus(500);
+      res.json({ error });
     });
-  }
+  });
 
-  if (expressApp.listen) {
-    // Override listen
-    const defaultListen = expressApp.listen;
-    function listen(...args) {
-      initMCPRouter();
-
-      return defaultListen.apply(expressApp, args);
-    }
-    expressApp.listen = listen;
-  }
-
-  return expressApp;
+  return { compile };
 }

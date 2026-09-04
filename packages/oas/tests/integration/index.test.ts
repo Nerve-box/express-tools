@@ -2,33 +2,37 @@ import { describe, test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import exampleSpec from '../static/exampleSpec.ts';
-import { definition, documentation, response as OASResponse, router as OASRouter, validation } from '../../src/index.ts';
+import { definition, router as OASRouter } from '../../src/index.ts';
+import Net from 'node:net';
 
 describe('Basic express router', () => {
-  let server;
+  let OAS;
   let app;
   let port;
+  let server: Net.Server | null;
 
   beforeEach(() => {
-    server = OASRouter(express(), exampleSpec);
+    app = express();
+    OAS = OASRouter(app, exampleSpec);
     port = 10000 + Math.round(Math.random() * 10000);
   });
 
   afterEach(() => {
-    if (app) app.close();
-    server = null;
+    if (server) server.close();
+    OAS = null;
     app = null;
   });
 
   describe('with a non-augmented route', () => {
     beforeEach(async () => {
-      server.get('/foo', (req, res, next) => {
+      app.get('/foo', (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
+      OAS.compile();
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -46,7 +50,7 @@ describe('Basic express router', () => {
 
   describe('with an augmented route, passing the method object', () => {
     beforeEach(async () => {
-      server.get('/foo', definition({
+      app.get('/foo', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -63,8 +67,10 @@ describe('Basic express router', () => {
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -82,7 +88,7 @@ describe('Basic express router', () => {
 
   describe('with an augmented route, passing the route object', () => {
     beforeEach(async () => {
-      server.get('/foo', definition({ get: {
+      app.get('/foo', definition({ get: {
         description: 'Get a User by Id',
         parameters: [
           {
@@ -99,8 +105,10 @@ describe('Basic express router', () => {
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -118,7 +126,7 @@ describe('Basic express router', () => {
 
   describe('with validation', () => {
     beforeEach(async () => {
-      server.get('/foo/:id', definition({
+      app.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -130,13 +138,15 @@ describe('Basic express router', () => {
         responses: {
           default: { schema: { $ref: '#/components/user' } },
         },
-      }), validation(), (req, res, next) => {
+      }), OAS.validation, (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -154,7 +164,7 @@ describe('Basic express router', () => {
 
   describe('with errored validation', () => {
     beforeEach(async () => {
-      server.get('/foo/:id', definition({
+      app.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -166,13 +176,15 @@ describe('Basic express router', () => {
         responses: {
           default: { schema: { $ref: '#/components/user' } },
         },
-      }), validation(), (req, res, next) => {
+      }), OAS.validation, (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -200,7 +212,7 @@ describe('Basic express router', () => {
 
   describe('description endpoint', () => {
     beforeEach(async () => {
-      server.get('/foo/:id', definition({
+      app.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -218,10 +230,12 @@ describe('Basic express router', () => {
         return next();
       });
 
-      server.get('/docs', documentation());
+      app.get('/docs', OAS.documentation);
+
+      OAS.compile();
 
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -259,7 +273,7 @@ describe('Basic express router', () => {
 
   describe('with response formatting on valid body', () => {
     beforeEach(async () => {
-      server.get('/foo/:id', definition({
+      app.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -271,13 +285,15 @@ describe('Basic express router', () => {
         responses: {
           default: { schema: { $ref: '#/components/user' } },
         },
-      }), OASResponse(), (req, res, next) => {
+      }), OAS.response, (req, res, next) => {
         res.status(200).json({ id: 'test', name: 'bar', age: 99 });
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -296,7 +312,7 @@ describe('Basic express router', () => {
 
   describe('with response formatting on invalid body', () => {
     beforeEach(async () => {
-      server.get('/foo/:id', definition({
+      app.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -308,13 +324,15 @@ describe('Basic express router', () => {
         responses: {
           default: { schema: { $ref: '#/components/user' } },
         },
-      }), OASResponse(), (req, res, next) => {
+      }), OAS.response, (req, res, next) => {
         res.status(200).json({ id: 'test', name: 'bar', age: 'michael' });
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });

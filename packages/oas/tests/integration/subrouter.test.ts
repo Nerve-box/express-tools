@@ -1,19 +1,21 @@
 import { describe, test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
-import { definition, documentation, router as OASRouter, validation } from '../../src/index.ts';
+import { definition, router as OASRouter } from '../../src/index.ts';
 
 describe('Nested express router', () => {
   let server;
   let app;
   let root;
   let port;
+  let OAS;
 
   beforeEach(() => {
     port = 10000 + Math.round(Math.random() * 10000);
 
     root = express();
-    server = OASRouter(express.Router(), { basePath: '/api', components: { user: {
+    app = express.Router();
+    OAS = OASRouter(app, { basePath: '/api', components: { user: {
       description: 'User model',
       type: 'object',
       properties: {
@@ -23,26 +25,27 @@ describe('Nested express router', () => {
       },
     } } });
 
-    root.use('/api', server);
+    root.use('/api', app);
   });
 
   afterEach(() => {
-    if (app) app.close();
+    if (server) server.close();
     server = null;
     app = null;
     root = null;
+    OAS = null;
   });
 
   describe('with a non-augmented route', () => {
     beforeEach(async () => {
-      server.get('/foo', (req, res, next) => {
+      app.get('/foo', (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
-      server.scan();
+      OAS.compile();
       await new Promise<void>((resolve, reject) => {
-        app = root.listen(port, (err) => {
+        server = root.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -66,7 +69,7 @@ describe('Nested express router', () => {
 
   describe('with an augmented route, passing the method object', () => {
     beforeEach(async () => {
-      server.get('/foo', definition({
+      app.get('/foo', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -83,9 +86,9 @@ describe('Nested express router', () => {
         return next();
       });
 
-      server.scan();
+      OAS.compile();
       await new Promise<void>((resolve, reject) => {
-        app = root.listen(port, (err) => {
+        server = root.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -104,7 +107,7 @@ describe('Nested express router', () => {
 
   describe('with validation', () => {
     beforeEach(async () => {
-      server.get('/foo/:id', definition({
+      app.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -116,14 +119,14 @@ describe('Nested express router', () => {
         responses: {
           default: { schema: { $ref: '#/components/user' } },
         },
-      }), validation(), (req, res, next) => {
+      }), OAS.validation, (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
-      server.scan();
+      OAS.compile();
       await new Promise<void>((resolve, reject) => {
-        app = root.listen(port, (err) => {
+        server = root.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -142,7 +145,7 @@ describe('Nested express router', () => {
 
   describe('description endpoint', () => {
     beforeEach(async () => {
-      server.get('/foo/:id', definition({
+      app.get('/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -160,11 +163,11 @@ describe('Nested express router', () => {
         return next();
       });
 
-      server.get('/docs', documentation());
+      app.get('/docs', OAS.documentation);
 
-      server.scan();
+      OAS.compile();
       await new Promise<void>((resolve, reject) => {
-        app = root.listen(port, (err) => {
+        server = root.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -231,25 +234,31 @@ describe('Nested express router', () => {
 describe('Flat express router', () => {
   let server;
   let app;
+  let OAS;
   const port = 10000 + Math.round(Math.random() * 10000);
 
   beforeEach(() => {
-    server = OASRouter(express(), { basePath: '/api', components: { } });
+    app = express();
+    OAS = OASRouter(app, { basePath: '/api', components: { } });
   });
 
   afterEach(() => {
-    if (app) app.close();
+    if (server) server.close();
+    app = null;
+    OAS = null;
   });
 
   describe('with a non-augmented route', () => {
     beforeEach(async () => {
-      server.get('/api/foo', (req, res, next) => {
+      app.get('/api/foo', (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -273,7 +282,7 @@ describe('Flat express router', () => {
 
   describe('with an augmented route, passing the method object', () => {
     beforeEach(async () => {
-      server.get('/api/foo', definition({
+      app.get('/api/foo', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -290,8 +299,10 @@ describe('Flat express router', () => {
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -310,7 +321,7 @@ describe('Flat express router', () => {
 
   describe('with validation', () => {
     beforeEach(async () => {
-      server.get('/api/foo/:id', definition({
+      app.get('/api/foo/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -322,13 +333,15 @@ describe('Flat express router', () => {
         responses: {
           default: { schema: { $ref: '#/components/user' } },
         },
-      }), validation(), (req, res, next) => {
+      }), OAS.validation, (req, res, next) => {
         res.status(200).json({ data: 'Hello world' });
         return next();
       });
 
+      OAS.compile();
+
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });
@@ -347,7 +360,7 @@ describe('Flat express router', () => {
 
   describe('description endpoint', () => {
     beforeEach(async () => {
-      server.get('/api/foo/bar/:id', definition({
+      app.get('/api/foo/bar/:id', definition({
         description: 'Get a User by Id',
         parameters: [
           {
@@ -365,10 +378,12 @@ describe('Flat express router', () => {
         return next();
       });
 
-      server.get('/docs', documentation());
+      app.get('/docs', OAS.documentation);
+
+      OAS.compile();
 
       await new Promise<void>((resolve, reject) => {
-        app = server.listen(port, (err) => {
+        server = app.listen(port, (err) => {
           if (err) reject(err);
           else resolve();
         });

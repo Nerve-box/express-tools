@@ -4,17 +4,21 @@
 
 ## What is it?
 
-Express-tools is a suite of protocol interop plugins for the [express](https://expressjs.com/en/) web framework.
+Express-tools is a suite of protocol interop plugins for the [Express](https://expressjs.com/en/) web framework.
 
-Because Express and Express-like routing has been around for over 15 years and currently holds [over 7% of the web frameworks market share], there are a good number of potentially older live services that could be too fragile to migrate to something newer if the owners suddenly wanted to add MCP support. 
+
+### Why this matters?
+
+Because Express and Express-like routing has been around for over 15 years and currently holds [over 7% of the web frameworks market share](https://technologychecker.io/technology/express#market-share), there are a good number of potentially older live services that could be too fragile to migrate to something newer if the owners suddenly wanted to add MCP support. 
+
+
+### How does it do it?
 
 The plugin system of Express-tools doesn't wrap, overload, or play with any Express internals and works on both legacy Express (pre-5.x) and the current LTS. This ensures that existing business logic remains unaffected.
 
-No new framework to learn, no monkey patching. 
+No new framework to learn, no monkey patching, just clean Express.
 
-The goal of these plugins is to make it dead simple to add protocol interop to existing applications, reducing new-framework fatigue.
-
-Important disclaimer: We are not associated in any way with the core Express team.
+**Important disclaimer**: This project is an independent effort and is not affiliated with the Express project.
 
 
 ## Examples
@@ -30,11 +34,11 @@ By defining routes as plain objects in the code, we gain insight from intellisen
 ```javascript
 
 import Express from 'express';
-import {definition, documentation, router as OASRouter} from '@express-tools/oas';
+import {definition, router as OASRouter} from '@express-tools/oas';
 
 const server = express();
 
-server.use(OASRouter({
+const OAS = OASRouter(server, {
   /* An OpenAPI spec JSON Object*/
 });
 
@@ -52,8 +56,9 @@ server.get('/user/:id', definition({
   },
 }), (req, res, next) => { /* Your business logic handler */ });
 
+OAS.compile();
 
-server.get('/openapi.json', documentation());
+server.get('/openapi.json', OAS.documentation);
 
 ```
 
@@ -75,13 +80,13 @@ import { definition, router as MCPRouter } from '@express-tools/mcp';
 
 // Wraps an existing Express app and adds MCP protocol support
 const server = express();
-
-server.use('/mcp', MCPRouter({
+const MCP = MCPRouter({
   serverInfo: {
     name: 'my-calculator-service',
     version: '1.0.0',
   },
-}));
+  basePath: '/mcp'
+});
 
 server.post('/calculate', definition({
   name: 'calculate',
@@ -111,6 +116,8 @@ server.post('/calculate', definition({
 
   res.json(result);
 });
+
+MCP.compile();
 ```
 
 In this example, our legacy app has one endpoint: `/calculate`. Under the hood, adding the `MCPRouter` plugin to our Express app spins up a JSON-RPC server and binds it to the route `/mcp`. Invoking the `definition` middleware creates a tool definition internally. 
@@ -131,8 +138,7 @@ A very special shoutout to [@drawm](https://github.com/drawm), [@mats852](https:
 
 ## TODO
 
-- Replace app wrapping with Express .use() syntax.
-- Replace .listen() overloading with .on('mount').
+- More test cases (Ex: complex apps with nested routers)
 - Benchmark OAS validation against Zod
 
 

@@ -1,4 +1,4 @@
-import { Express, Request, RequestHandler } from 'express';
+import { Request, RequestHandler } from 'express';
 import { JSONRPCServer } from 'json-rpc-2.0';
 
 /**
@@ -91,12 +91,11 @@ export interface MCPContext {
 /**
  * Express router enhanced with MCP functionality
  */
-export interface MCPRouter extends Express {
+export interface MCPRouter {
   /**
-   * Internal MCP context (populated during initialization)
-   * @internal
+   * Compiles the routes
    */
-  _mcp: MCPContext
+  compile: () => void
 }
 
 /**
@@ -228,24 +227,28 @@ declare module '@express-tools/mcp' {
    * - tools/list: Lists all registered tools
    * - tools/call: Executes a tool by name
    *
-   * @param app - Express application to enhance
+   * @param expressApp - Your express application
    * @param spec - MCP configuration (serverInfo is required)
-   * @returns Enhanced Express app with MCP capabilities
+   * @returns RequestHandler
    *
    * @example Basic setup
    * ```typescript
-   * const server = router(express(), {
+   * const server = express();
+   *
+   * server.use('/mcp', router({
    *   serverInfo: {
    *     name: 'my-api',
    *     version: '1.0.0'
    *   },
    *   basePath: '/mcp' // Optional, defaults to '/mcp'
-   * });
+   * }));
    * ```
    *
    * @example With predefined tools
    * ```typescript
-   * const server = router(express(), {
+   * const server = express();
+   *
+   * server.use('/mcp', router({
    *   serverInfo: {
    *     name: 'my-api',
    *     version: '1.0.0'
@@ -268,10 +271,10 @@ declare module '@express-tools/mcp' {
    *       return { temperature: 72, conditions: 'Sunny' };
    *     }
    *   }
-   * });
+   * }));
    * ```
    */
-  export function router(app: Express, spec: MCPSpec): MCPRouter;
+  export function router(expressApp: Express.Application, spec: MCPSpec): MCPRouter;
 
   // Export types for external use
   export type {

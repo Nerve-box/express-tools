@@ -1,20 +1,22 @@
 import Express from 'express';
 import OpenApiSpecification from 'swagger-route-validator';
+import { expressRequestValidation, expressResponseValidation } from 'swagger-route-validator';
 import { formatPathToOAS, mergeDefinitions } from './utils.ts';
 
-interface OASRouter extends Express {
-  scan?: () => void
+interface OASRouter {
+  compile: () => void
+  documentation: (req, res, next) => void
+  validation: (req, res, next) => void
+  response: (req, res, next) => void
 }
 
-interface Spec extends Partial<OpenApiSpecification> {
+interface Spec extends Partial<OpenApiSpecification.OpenApiSpecification> {
   components: any
 }
 
-export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
-  let scanned: boolean = false;
-
+export default function router(expressApp: Express.Application, spec: Spec): OASRouter {
   // Store a working copy of the spec in express app
-  expressApp['_oas'] = {
+  const state = {
     openapi: '3.1.0',
     info: {},
     servers: [],
@@ -23,24 +25,13 @@ export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
     components: {},
     tags: [],
   };
-  mergeDefinitions(expressApp['_oas'], spec);
-
-  // Append config to request to avoid redundant lookups
-  function OASRouter(req, res, next) {
-    req._oas = expressApp['_oas'];
-    return next();
-  }
-  OASRouter.OASType = 'router';
-  expressApp.use(OASRouter);
+  mergeDefinitions(state, spec);
 
   if (spec.basePath && spec.basePath !== '/') {
     expressApp.mountpath = spec.basePath;
   }
 
-  function initOASRouter() {
-    if (scanned) throw new Error('OAS Router has already scanned for routes. Make sure it is only invoked once.');
-    scanned = true;
-
+  function compile() {
     const stack = expressApp.stack || expressApp.router.stack;
 
     // Scan routes for definition middleware
@@ -56,26 +47,44 @@ export default function router(expressApp: OASRouter, spec: Spec): OASRouter {
           if (spec.basePath && spec.basePath !== '/' && operationId.indexOf(expressApp.mountpath) === 0) operationId = operationId.replace(expressApp.mountpath, '');
 
           // Check if path level or method level
-          expressApp['_oas'].paths[formatPathToOAS(operationId)] = expressApp['_oas'].paths[formatPathToOAS(operationId)] || {};
-          if (override[definitionPlugin.method]) mergeDefinitions(expressApp['_oas'].paths[formatPathToOAS(operationId)], override);
-          else mergeDefinitions(expressApp['_oas'].paths[formatPathToOAS(operationId)], { [definitionPlugin.method]: override });
+          state.paths[formatPathToOAS(operationId)] = state.paths[formatPathToOAS(operationId)] || {};
+          if (override[definitionPlugin.method]) mergeDefinitions(state.paths[formatPathToOAS(operationId)], override);
+          else mergeDefinitions(state.paths[formatPathToOAS(operationId)], { [definitionPlugin.method]: override });
         }
       }
     }
   }
 
-  expressApp.scan = initOASRouter;
-
-  if (expressApp.listen) {
-    // Override listen
-    const defaultListen = expressApp.listen;
-    function listen(...args) {
-      initOASRouter();
-
-      return defaultListen.apply(expressApp, args);
-    }
-    expressApp.listen = listen;
+  function documentation(req, res) {
+    res.json(state);
   }
 
-  return expressApp;
+  function validation(req, res, next) {
+    if (!req.route) throw new Error('Request validation middleware must be added to a route');
+
+    let operationId = formatPathToOAS(req.route.path);
+    // subtract spec basePath if exists
+    if (state.basePath && state.basePath !== '/' && operationId.indexOf(state.basePath) === 0) operationId = operationId.replace(state.basePath, '');
+
+    const matchingSpec = state.paths?.[operationId]?.[req.method.toLowerCase()];
+
+    if (matchingSpec) return expressRequestValidation(matchingSpec, state)(req, res, next);
+
+    throw new Error(`Request validation middleware added, but no definition could be found for ${operationId}.${req.method.toLowerCase()}`);
+  }
+
+  function response(req, res, next) {
+    if (!req.route) throw new Error('Response validation middleware must be added to a route');
+
+    let operationId = formatPathToOAS(req.route.path);
+    // subtract spec basePath if exists
+    if (state.basePath && state.basePath !== '/' && operationId.indexOf(state.basePath) === 0) operationId = operationId.replace(state.basePath, '');
+    const matchingSpec = state.paths?.[operationId]?.[req.method.toLowerCase()];
+
+    if (matchingSpec) return expressResponseValidation(matchingSpec, {}, state)(req, res, next);
+
+    throw new Error(`Response validation middleware added, but no definition could be found for ${operationId}.${req.method.toLowerCase()}`);
+  }
+
+  return { compile, documentation, validation, response };
 }

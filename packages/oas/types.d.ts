@@ -1,5 +1,5 @@
 import { OpenApiSpecification } from 'swagger-route-validator';
-import { Express, Request, RequestHandler } from 'express';
+import { Request, RequestHandler } from 'express';
 
 /**
  * OpenAPI parameter definition
@@ -160,19 +160,15 @@ export interface OASSpec extends Partial<OpenApiSpecification> {
 /**
  * Express router enhanced with OAS functionality
  */
-export interface OASRouter extends Express {
+export interface OASRouter {
   /**
    * Manually trigger route scanning to build the OpenAPI specification.
-   * This is automatically called when listen() is invoked.
    * Use this when working with subrouters that won't call listen() directly.
    */
-  scan: () => void
-
-  /**
-   * Internal OpenAPI specification (populated after scan)
-   * @internal
-   */
-  _oas?: OASSpec
+  compile: () => void
+  documentation: (req, res, next) => void
+  validation: (req, res, next) => void
+  response: (req, res, next) => void
 }
 
 /**
@@ -214,48 +210,17 @@ declare module '@express-tools/oas' {
   export function definition(override: RouteDefinitionOverride): RequestHandler;
 
   /**
-   * Generate and return the complete OpenAPI specification as JSON.
-   * Includes all route definitions and overrides.
-   *
-   * @returns Express middleware that responds with the OpenAPI spec
-   *
-   * @example
-   * ```typescript
-   * server.get('/docs', documentation());
-   * ```
-   */
-  export function documentation(): RequestHandler;
-
-  /**
-   * Validate the response body against the OpenAPI specification.
-   * Throws an error if the response doesn't match the defined schema.
-   *
-   * @returns Express middleware that validates responses
-   *
-   * @example
-   * ```typescript
-   * server.get('/user/:id',
-   *   definition({ responses: { 200: { schema: { $ref: '#/components/schemas/User' } } } }),
-   *   response(),
-   *   (req, res) => {
-   *     res.json({ id: '123', name: 'John' });
-   *   }
-   * );
-   * ```
-   */
-  export function response(): RequestHandler;
-
-  /**
    * Wrap an Express app or router with OpenAPI functionality.
    * Automatically scans routes when listen() is called.
-   *
-   * @param app - Express application or router to enhance
+   * @param expressApp - Your express application
    * @param spec - OpenAPI specification (optional)
-   * @returns Enhanced Express router with OAS capabilities
+   * @returns OASRouter
    *
    * @example
    * ```typescript
-   * const server = router(express(), {
+   * const server = express();
+   *
+   * server.use(router({
    *   info: {
    *     title: 'My API',
    *     version: '1.0.0'
@@ -271,35 +236,10 @@ declare module '@express-tools/oas' {
    *       }
    *     }
    *   }
-   * });
+   * }));
    * ```
    */
-  export function router(app: Express, spec?: OASSpec): OASRouter;
-
-  /**
-   * Validate incoming requests against the OpenAPI specification.
-   * Validates path parameters, query parameters, headers, and request body.
-   *
-   * @returns Express middleware that validates requests
-   *
-   * @example
-   * ```typescript
-   * server.post('/user',
-   *   definition({
-   *     parameters: [{
-   *       name: 'body',
-   *       in: 'body',
-   *       schema: { $ref: '#/components/schemas/User' }
-   *     }]
-   *   }),
-   *   validation(),
-   *   (req, res) => {
-   *     // req.body is validated
-   *   }
-   * );
-   * ```
-   */
-  export function validation(): RequestHandler;
+  export function router(expressApp: Express.Application, spec?: OASSpec): OASRouter;
 
   // Export types for external use
   export type {
